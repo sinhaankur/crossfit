@@ -11,6 +11,7 @@ const LINKS = [
   { href: "/log", label: "Log" },
   { href: "/movements", label: "Movements" },
   { href: "/benchmarks", label: "Benchmarks" },
+  { href: "/app", label: "App", soon: true },
 ];
 
 export function SiteNav() {
@@ -24,10 +25,11 @@ export function SiteNav() {
           {LINKS.map((l) => (
             <a key={l.href} href={l.href}
               aria-current={isActive(l.href) ? "page" : undefined}
-              className={`whitespace-nowrap rounded-full px-3.5 py-1.5 text-sm font-medium transition ${
+              className={`flex items-center gap-1 whitespace-nowrap rounded-full px-3.5 py-1.5 text-sm font-medium transition ${
                 isActive(l.href) ? "bg-[var(--accent)] text-white" : "text-[var(--muted)] hover:text-[var(--fg)]"
               }`}>
               {l.label}
+              {l.soon && <span title="Coming to the App Store" className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-[var(--accent)]" />}
             </a>
           ))}
         </div>
