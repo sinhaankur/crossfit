@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { Plan, Session } from "@/lib/plan-engine";
+import { LIFT_LABEL } from "@/lib/strength";
 import { WorkoutTimer } from "./workout-timer";
 
 // PlanView — presents the plan so a total beginner knows exactly what to do:
@@ -123,6 +124,30 @@ function SessionCard({ session, done, onToggle }: { session: Session; done: bool
       <Block title="Warm-up (don't skip)">
         <ul className="space-y-1 text-sm text-[var(--fg)]/85">{session.warmup.map((w, i) => <li key={i}>· {w}</li>)}</ul>
       </Block>
+
+      {/* Strength block — real % of your 1RM, driven by your saved maxes. */}
+      {session.strength && (
+        <Block title="Strength — build the lift">
+          <div className="rounded-lg border border-[var(--accent)]/30 bg-[var(--accent)]/[0.06] p-3">
+            <div className="flex items-baseline justify-between gap-2">
+              <p className="font-semibold">{LIFT_LABEL[session.strength.lift]}</p>
+              <p className="shrink-0 text-xs font-bold text-[var(--accent)]">{session.strength.scheme}</p>
+            </div>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {session.strength.sets.map((set, i) => (
+                <span key={i} className="rounded-md bg-black/30 px-2 py-1 text-xs tabular-nums">
+                  {set.reps}{set.weight > 0 ? <> × <b>{set.weight}</b></> : <> reps</>}
+                  {set.weight > 0 && <span className="text-[var(--muted)]"> · {Math.round(set.pct * 100)}%</span>}
+                </span>
+              ))}
+            </div>
+            <p className="mt-2 text-xs text-[var(--fg)]/70">{session.strength.note}</p>
+            {session.strength.sets[0]?.weight === 0 && (
+              <a href="/body" className="mt-2 inline-block text-xs font-semibold text-[var(--accent)] underline">Set your 1RM to get exact weights →</a>
+            )}
+          </div>
+        </Block>
+      )}
 
       {/* The work — each movement with STEPS + safety + scale */}
       <Block title="The workout">

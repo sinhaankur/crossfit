@@ -13,6 +13,7 @@
 // © Ankur Sinha.
 
 import { MOVEMENTS, MOVEMENT_BY_ID, type Movement, type Equipment, type Pattern } from "./movements";
+import { fiveByFive, hypertrophy, type Lift, type LiftDay, type OneRMs } from "./strength";
 
 export type BodyType = "ectomorph" | "mesomorph" | "endomorph" | "unsure";
 export type Goal = "general-health" | "lose-fat" | "build-muscle" | "endurance" | "strength";
@@ -41,6 +42,9 @@ export interface Session {
   label: string;        // "Day 1 · Full body"
   focus: string;        // human focus line
   warmup: string[];     // 2–3 mobility/cardio primers
+  /** Optional barbell strength block driven by the user's saved 1RMs — this is
+   *  what makes the plan actually BUILD (real % of your max, rising weekly). */
+  strength?: LiftDay;
   work: PlannedMovement[];
   cooldown: string[];
   reminder: string;     // what to do next (rest / next session)
@@ -124,9 +128,21 @@ const COOLDOWNS = [
 
 /* ── the plan builder ────────────────────────────────────────────────────── */
 
-export function buildPlan(profile: Profile): Plan {
+/** Which barbell lift leads a day of a given pattern (for the strength block). */
+const LIFT_FOR_PATTERN: Partial<Record<Pattern, Lift>> = {
+  squat: "back-squat",
+  hinge: "deadlift",
+  push: "shoulder-press",
+  pull: "clean",
+};
+
+export function buildPlan(profile: Profile, oneRMs: OneRMs = {}): Plan {
   const days = Math.max(1, Math.min(6, profile.daysPerWeek));
   const weeks = Math.max(1, Math.min(12, profile.weeks));
+  // A strength block only makes sense with a barbell. When present, we lead the
+  // session with real %-of-1RM work; hypertrophy scheme for muscle-building goals.
+  const hasBar = has(profile, "barbell");
+  const strengthScheme = profile.goal === "build-muscle" ? hypertrophy : fiveByFive;
 
   // Session templates rotate the movement patterns so nothing is overworked and
   // there's built-in recovery between hard days.
@@ -146,12 +162,20 @@ export function buildPlan(profile: Profile): Plan {
         const m = pick(options, w + d + i);
         if (m) work.push({ movement: m, prescription: prescribe(m, w, weeks, profile.goal) });
       });
-      const est = 20 + work.length * 6; // warm-up + work + cool-down, minutes
+      // Lead barbell strength block: pick the lift for this day's first patterned
+      // slot and program real % of the user's 1RM (or rep targets if not set yet).
+      let strength: LiftDay | undefined;
+      if (hasBar) {
+        const lift = patterns.map((p) => LIFT_FOR_PATTERN[p]).find(Boolean);
+        if (lift) strength = strengthScheme(lift, oneRMs[lift] ?? null, w, weeks);
+      }
+      const est = 20 + work.length * 6 + (strength ? 12 : 0); // + strength block
       sessions.push({
         day: d + 1,
         label: `Day ${d + 1} · ${patterns.map(cap).join(" · ")}`,
         focus: focusLine(patterns, profile.goal),
         warmup: WARMUPS.slice(0, 3),
+        strength,
         work,
         cooldown: COOLDOWNS,
         reminder: d + 1 < days

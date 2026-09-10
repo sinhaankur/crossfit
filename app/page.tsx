@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { buildPlan, type Profile, type BodyType, type Goal, type Diet, type Experience } from "@/lib/plan-engine";
+import { loadOneRMs } from "@/lib/strength";
 import type { Equipment } from "@/lib/movements";
 import { PlanView } from "@/components/plan-view";
 import { SiteNav } from "@/components/site-nav";
@@ -51,7 +52,8 @@ export default function Home() {
 
   function generate() {
     const profile: Profile = { bodyType, goal, diet, experience, equipment, daysPerWeek, weeks };
-    setPlan(buildPlan(profile));
+    // Feed the user's saved 1RMs so barbell days get real %-of-max working weights.
+    setPlan(buildPlan(profile, loadOneRMs()));
     setTimeout(() => document.getElementById("plan")?.scrollIntoView({ behavior: "smooth" }), 60);
   }
   function toggleEquip(e: Equipment) {
