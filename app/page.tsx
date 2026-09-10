@@ -63,22 +63,41 @@ export default function Home() {
   return (
     <main className="min-h-dvh">
       <SiteNav />
-      {/* Hero */}
-      <section className="mx-auto max-w-3xl px-5 pt-14 pb-6 text-center">
-        <p className="font-mono text-[11px] uppercase tracking-[0.3em] text-[var(--muted)]">CrossFit · a plan you can keep</p>
-        <h1 className="mt-4 text-4xl font-bold leading-tight sm:text-5xl">
-          A workout plan built <span className="text-[var(--accent)]">for you</span> — safely.
-        </h1>
-        <p className="mx-auto mt-4 max-w-xl text-[var(--fg)]/75 leading-relaxed">
-          Answer a few honest questions and get a step-by-step, progressive plan — every movement
-          with real form cues and an easier option, so you build strength without getting hurt.
-          Consistency beats extremes: even a couple of solid days a week keeps you healthy.
-        </p>
+      {/* Hero — atmospheric, sinhaankur.com-level */}
+      <section className="relative isolate overflow-hidden">
+        <div className="aurora" aria-hidden />
+        <div className="relative z-10 mx-auto max-w-4xl px-5 pt-20 pb-14 text-center sm:pt-28">
+          <p className="font-mono-eyebrow text-[var(--muted)]">CrossFit · a plan you can keep</p>
+          <h1 className="mx-auto mt-6 max-w-3xl text-[2.6rem] font-bold leading-[1.05] tracking-tight sm:text-6xl">
+            Train with intent.{" "}
+            <span className="font-display italic font-normal text-[var(--accent)]">Build</span> a body that lasts.
+          </h1>
+          <p className="mx-auto mt-6 max-w-xl text-[15px] leading-relaxed text-[var(--fg)]/70 sm:text-lg">
+            Answer a few honest questions and get a step-by-step, progressive plan — every movement
+            with real form cues and an easier option, so you get stronger without getting hurt.
+            Consistency beats extremes.
+          </p>
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+            <a href="#build" className="rounded-full bg-[var(--accent)] px-6 py-3 text-sm font-bold text-white shadow-lg shadow-rose-500/20 transition hover:brightness-110">
+              Build my plan
+            </a>
+            <a href="/movements" className="rounded-full border border-white/15 px-6 py-3 text-sm font-semibold text-[var(--fg)]/85 transition hover:border-white/40">
+              See the movements
+            </a>
+          </div>
+          <div className="mx-auto mt-10 flex max-w-md flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs text-[var(--muted)]">
+            <span>✓ No account</span><span>✓ On your device</span><span>✓ Free forever</span>
+          </div>
+        </div>
       </section>
 
       {/* The form */}
-      <section className="mx-auto max-w-3xl px-5 pb-4">
-        <div className="space-y-5 rounded-2xl border border-[var(--line)] bg-[var(--card)] p-5">
+      <section id="build" className="mx-auto max-w-3xl scroll-mt-20 px-5 pb-4">
+        <div className="mb-5 text-center">
+          <p className="font-mono-eyebrow text-[var(--muted)]">01 — your plan</p>
+          <h2 className="mt-2 text-2xl font-bold sm:text-3xl">Tell us about you.</h2>
+        </div>
+        <div className="space-y-5 rounded-3xl border border-[var(--line)] bg-[var(--card)] p-6 shadow-2xl shadow-black/40 sm:p-8">
           <Field label="Your body type">
             <Choices options={BODY.map((b) => ({ v: b.v, label: b.label, hint: b.hint }))} value={bodyType} onPick={(v) => setBodyType(v as BodyType)} />
           </Field>

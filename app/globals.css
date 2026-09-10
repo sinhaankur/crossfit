@@ -3,12 +3,74 @@
 @tailwind utilities;
 
 :root {
-  --bg: #0e0f13;
+  --bg: #0b0c10;
   --card: #16181f;
   --fg: #f3f4f6;
   --muted: #9aa0aa;
   --accent: #f43f5e;   /* CrossFit energy — rose/red */
+  --accent-2: #fb7185; /* lighter rose for gradients */
   --line: rgba(255,255,255,0.08);
+  --font-sans: ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-display: Georgia, "Times New Roman", serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
 }
 html, body { background: var(--bg); color: var(--fg); }
-body { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+body {
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Display face — Fraunces, with the soft optical axes tuned like sinhaankur.com. */
+.font-display {
+  font-family: var(--font-display);
+  font-variation-settings: "opsz" 72, "SOFT" 40, "WONK" 1;
+}
+.font-mono-eyebrow {
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.28em;
+  font-size: 11px;
+}
+
+/* Atmospheric aurora behind the hero — calm, alive, not busy. */
+.aurora {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+.aurora::before, .aurora::after {
+  content: "";
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(90px);
+  opacity: 0.5;
+}
+.aurora::before {
+  width: 55vw; height: 55vw;
+  left: -10vw; top: -18vw;
+  background: radial-gradient(circle, rgba(244,63,94,0.55), transparent 70%);
+  animation: drift1 18s ease-in-out infinite alternate;
+}
+.aurora::after {
+  width: 48vw; height: 48vw;
+  right: -12vw; top: -6vw;
+  background: radial-gradient(circle, rgba(99,102,241,0.4), transparent 70%);
+  animation: drift2 22s ease-in-out infinite alternate;
+}
+@keyframes drift1 { to { transform: translate(6vw, 6vw) scale(1.1); } }
+@keyframes drift2 { to { transform: translate(-5vw, 4vw) scale(1.08); } }
+
+/* Fine grain overlay for texture (very subtle). */
+.grain::after {
+  content: "";
+  position: absolute; inset: 0; z-index: 1;
+  pointer-events: none;
+  opacity: 0.04;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aurora::before, .aurora::after { animation: none; }
+}

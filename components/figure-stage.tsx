@@ -23,11 +23,16 @@ export function FigureStage({ pattern, playing = true }: { pattern: Pattern; pla
 
   useEffect(() => {
     if (!playing) return;
-    let start = performance.now();
-    const period = 3200; // ms per full rep cycle
+    const start = performance.now();
+    const period = 4800; // slow, calm rep — reads as a demonstration, not a twitch
+    // Ease-in-out ping-pong + a hold at each end, so the figure settles into clean
+    // top/bottom positions instead of frantically bouncing.
     const loop = (now: number) => {
-      const phase = ((now - start) % period) / period;      // 0..1
-      setT(phase < 0.5 ? phase * 2 : (1 - phase) * 2);       // ping-pong 0..1..0
+      const phase = ((now - start) % period) / period;            // 0..1
+      const tri = phase < 0.5 ? phase * 2 : (1 - phase) * 2;       // 0..1..0
+      const held = tri < 0.15 ? 0 : tri > 0.85 ? 1 : (tri - 0.15) / 0.7; // dwell at ends
+      const eased = held < 0.5 ? 2 * held * held : 1 - Math.pow(-2 * held + 2, 2) / 2; // easeInOut
+      setT(eased);
       raf.current = requestAnimationFrame(loop);
     };
     raf.current = requestAnimationFrame(loop);
@@ -72,7 +77,6 @@ interface Joints {
   head: P; neck: P; hip: P;
   kneeL: P; kneeR: P; ankleL: P; ankleR: P;
   shL: P; shR: P; elL: P; elR: P; wrL: P; wrR: P;
-  stroke: string; lw: number;
 }
 
 function skeleton(pattern: Pattern, t: number, yaw: number): Joints {
@@ -124,22 +128,42 @@ function skeleton(pattern: Pattern, t: number, yaw: number): Joints {
   const wrL: P = { x: elL.x - dx(Math.sin(raise + aa) * 8), y: elL.y + Math.cos(raise + aa) * foreLen };
   const wrR: P = { x: elR.x + dx(Math.sin(raise + aa) * 8), y: elR.y + Math.cos(raise + aa) * foreLen };
 
-  return { head, neck, hip, kneeL, kneeR, ankleL, ankleR, shL, shR, elL, elR, wrL, wrR, stroke: "rgba(255,255,255,0.9)", lw: 7 };
+  return { head, neck, hip, kneeL, kneeR, ankleL, ankleR, shL, shR, elL, elR, wrL, wrR };
 }
 
 function Bones({ j }: { j: Joints }) {
-  const line = (a: P, b: P, key: string) => (
-    <line key={key} x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke={j.stroke} strokeWidth={j.lw} strokeLinecap="round" />
-  );
+  // Draw a filled, fit body: a torso polygon + tapered rounded limbs (capsules),
+  // so it reads as a person rather than sticks. Rose accent, soft depth shading.
+  const limb = (a: P, b: P, w1: number, w2: number, key: string) => {
+    // A capsule from a→b with end radii w1,w2 (rounded via stroke caps in two passes).
+    return (
+      <g key={key}>
+        <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke="var(--fig)" strokeWidth={Math.max(w1, w2)} strokeLinecap="round" />
+      </g>
+    );
+  };
+  // torso as a tapered quad from hips to shoulders
+  const hipW = 11, shW = 15;
+  const torso = `M ${j.hip.x - hipW} ${j.hip.y}
+    L ${j.hip.x + hipW} ${j.hip.y}
+    L ${j.shR.x + 3} ${j.shR.y}
+    L ${j.shL.x - 3} ${j.shL.y} Z`;
   return (
-    <g>
-      {line(j.hip, j.neck, "spine")}
-      {line(j.hip, j.kneeL, "thighL")}{line(j.kneeL, j.ankleL, "shinL")}
-      {line(j.hip, j.kneeR, "thighR")}{line(j.kneeR, j.ankleR, "shinR")}
-      {line(j.shL, j.elL, "upperL")}{line(j.elL, j.wrL, "foreL")}
-      {line(j.shR, j.elR, "upperR")}{line(j.elR, j.wrR, "foreR")}
-      {line(j.shL, j.shR, "shoulders")}
-      <circle cx={j.head.x} cy={j.head.y} r="12" fill={j.stroke} />
+    <g style={{ ["--fig" as string]: "rgba(244,63,94,0.92)" }}>
+      {/* legs behind torso */}
+      {limb(j.hip, j.kneeL, 15, 11, "thighL")}{limb(j.kneeL, j.ankleL, 11, 8, "shinL")}
+      {limb(j.hip, j.kneeR, 15, 11, "thighR")}{limb(j.kneeR, j.ankleR, 11, 8, "shinR")}
+      {/* torso */}
+      <path d={torso} fill="var(--fig)" />
+      <circle cx={j.hip.x} cy={j.hip.y} r={hipW} fill="var(--fig)" />
+      {/* arms */}
+      {limb(j.shL, j.elL, 11, 8, "upperL")}{limb(j.elL, j.wrL, 8, 6, "foreL")}
+      {limb(j.shR, j.elR, 11, 8, "upperR")}{limb(j.elR, j.wrR, 8, 6, "foreR")}
+      {/* neck + head */}
+      <line x1={j.neck.x} y1={j.neck.y} x2={j.head.x} y2={j.head.y} stroke="var(--fig)" strokeWidth="9" strokeLinecap="round" />
+      <circle cx={j.head.x} cy={j.head.y} r="13" fill="var(--fig)" />
+      {/* subtle highlight for depth */}
+      <circle cx={j.head.x - 3} cy={j.head.y - 3} r="4" fill="rgba(255,255,255,0.18)" />
     </g>
   );
 }
