@@ -1,11 +1,11 @@
 "use client";
 
 import { Suspense, useMemo, useRef } from "react";
-import { Canvas } from "@react-three/fiber";
+import { Canvas, useFrame } from "@react-three/fiber";
 import { OrbitControls, useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 import type { Pattern } from "@/lib/movements";
-import { musclesFor, MUSCLE_LABEL, type MuscleId } from "@/lib/anatomy";
+import { musclesFor, type MuscleId } from "@/lib/anatomy";
 
 // AnatomyHuman — the REAL anatomical body (from Z-Anatomy, CC-BY-SA 4.0): actual
 // muscle meshes, no skin. Each mesh carries a `kelo_muscle` tag (glTF extras) so
@@ -55,24 +55,43 @@ export function AnatomyHuman({ pattern }: { pattern: Pattern }) {
 function Body({ primary, secondary }: { primary: MuscleId[]; secondary: MuscleId[] }) {
   const { scene } = useGLTF(MODEL);
   const cloned = useMemo(() => scene.clone(true), [scene]);
+  const wrap = useRef<THREE.Group>(null);
 
-  useMemo(() => {
+  // Track the worked-muscle materials so we can PULSE their glow (the "muscle
+  // firing" feel) without ever moving/dismembering the mesh — safe animation.
+  const workedMats = useMemo(() => {
+    const mats: { mat: THREE.MeshStandardMaterial; base: number }[] = [];
     cloned.traverse((o) => {
       const mesh = o as THREE.Mesh;
       if (!mesh.isMesh) return;
       const tag = (mesh.userData?.kelo_muscle ?? mesh.userData?.extras?.kelo_muscle) as MuscleId | undefined;
       const worked = tag && primary.includes(tag) ? "p" : tag && secondary.includes(tag) ? "s" : "off";
+      const base = worked === "p" ? 0.6 : worked === "s" ? 0.25 : 0;
       const mat = new THREE.MeshStandardMaterial({
         color: worked === "p" ? PRIMARY : worked === "s" ? SECONDARY : BASE,
         emissive: worked === "p" ? EMIS_P : worked === "s" ? EMIS_S : new THREE.Color("#000000"),
-        emissiveIntensity: worked === "p" ? 0.6 : worked === "s" ? 0.25 : 0,
-        roughness: 0.55, metalness: 0.05,
+        emissiveIntensity: base, roughness: 0.55, metalness: 0.05,
       });
       mesh.material = mat;
+      if (base > 0) mats.push({ mat, base });
     });
+    return mats;
   }, [cloned, primary, secondary]);
 
-  return <primitive object={cloned} />;
+  // Safe motion: a slow breathing bob + gentle sway on the WHOLE body (never
+  // tears the mesh), and a pulse on the worked muscles so they look like they're
+  // firing. (Full rep-articulation needs a rigged glTF — baked in Blender.)
+  useFrame(({ clock }) => {
+    const t = clock.elapsedTime;
+    if (wrap.current) {
+      wrap.current.position.y = Math.sin(t * 1.4) * 0.012;          // breathe
+      wrap.current.rotation.z = Math.sin(t * 0.7) * 0.015;          // subtle sway
+    }
+    const pulse = 0.75 + 0.25 * Math.sin(t * 2.4);                  // muscle firing
+    for (const { mat, base } of workedMats) mat.emissiveIntensity = base * pulse;
+  });
+
+  return <group ref={wrap}><primitive object={cloned} /></group>;
 }
 
 useGLTF.preload(MODEL);
