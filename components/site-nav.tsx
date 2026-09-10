@@ -49,7 +49,8 @@ export function SiteNav() {
       <nav className="mx-auto flex max-w-5xl items-center justify-between gap-2 px-4 py-3">
         {/* Brand */}
         <a href="/today" className="group flex items-center gap-2" aria-label="Kelo — home">
-          <span className="grid h-7 w-7 place-items-center rounded-lg bg-gradient-to-br from-[var(--accent-2)] to-[var(--accent)] text-[13px] font-black text-white shadow-sm shadow-rose-500/30 transition group-hover:scale-105">K</span>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.svg" alt="" width={28} height={28} className="h-7 w-7 rounded-lg shadow-sm shadow-rose-500/30 transition group-hover:scale-105" />
           <span className="flex items-baseline gap-1.5">
             <span className="text-[15px] font-bold tracking-tight text-[var(--fg)]">Kelo</span>
             <span className="hidden font-mono text-[9px] uppercase tracking-[0.2em] text-[var(--muted)] sm:inline">CrossFit</span>

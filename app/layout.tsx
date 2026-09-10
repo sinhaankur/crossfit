@@ -10,10 +10,10 @@ const mono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono", displ
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://crossfit.sinhaankur.com"),
-  title: "CrossFit Plan — a safe, personal workout plan you can keep",
+  title: { default: "Kelo — Strength & CrossFit · Train longer, live longer", template: "%s · Kelo" },
   description:
-    "Answer a few honest questions — body type, goal, diet, experience, equipment — and get a safe, progressive CrossFit-style plan with step-by-step form for every movement. Download it or bookmark it. No account, private, free. Consistency over extremes.",
-  applicationName: "Kelo · CrossFit",
+    "Kelo is your strength & CrossFit coach: answer a few honest questions and get a safe, progressive plan with 3D step-by-step form for every movement. Track your lifts, body and streaks. Free, private, on your device. Train longer, live longer.",
+  applicationName: "Kelo",
   manifest: "/manifest.webmanifest",
   appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "Kelo" },
   icons: {
@@ -21,10 +21,17 @@ export const metadata: Metadata = {
     apple: "/apple-touch-icon.png",
   },
   openGraph: {
-    title: "Your safe, personal CrossFit plan",
-    description: "Body type + diet + goal → a progressive plan with steps for every move. Download or bookmark. No login.",
+    title: "Kelo — Strength & CrossFit",
+    description: "A safe, progressive plan with 3D form for every movement. Track lifts, body & streaks. Free, on your device. Train longer, live longer.",
     type: "website",
     url: "https://crossfit.sinhaankur.com",
+    images: [{ url: "/og.png", width: 1200, height: 630, alt: "Kelo — Strength & CrossFit" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Kelo — Strength & CrossFit",
+    description: "Safe, progressive plans · 3D form · track lifts, body & streaks. Free, on your device. Train longer, live longer.",
+    images: ["/og.png"],
   },
 };
 export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: "#0e0f13" };

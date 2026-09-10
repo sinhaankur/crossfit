@@ -67,11 +67,16 @@ export default function Home() {
       <section className="relative isolate overflow-hidden">
         <div className="aurora" aria-hidden />
         <div className="relative z-10 mx-auto max-w-4xl px-5 pt-20 pb-14 text-center sm:pt-28">
-          <p className="font-mono-eyebrow text-[var(--muted)]">CrossFit · a plan you can keep</p>
-          <h1 className="mx-auto mt-6 max-w-3xl text-[2.6rem] font-bold leading-[1.05] tracking-tight sm:text-6xl">
+          <div className="mx-auto mb-6 flex w-fit items-center gap-2 rounded-full border border-[var(--line)] bg-[var(--card)]/60 px-4 py-1.5 backdrop-blur">
+            <span className="grid h-5 w-5 place-items-center rounded-md bg-gradient-to-br from-[var(--accent-2)] to-[var(--accent)] text-[11px] font-black text-white">K</span>
+            <span className="text-sm font-bold tracking-tight">Kelo</span>
+            <span className="font-mono text-[9px] uppercase tracking-[0.2em] text-[var(--muted)]">Strength &amp; CrossFit</span>
+          </div>
+          <h1 className="mx-auto mt-2 max-w-3xl text-[2.6rem] font-bold leading-[1.05] tracking-tight sm:text-6xl">
             Train with intent.{" "}
             <span className="font-display italic font-normal text-[var(--accent)]">Build</span> a body that lasts.
           </h1>
+          <p className="mt-3 font-display text-lg italic text-[var(--accent)]/90">Train longer. Live longer.</p>
           <p className="mx-auto mt-6 max-w-xl text-[15px] leading-relaxed text-[var(--fg)]/70 sm:text-lg">
             Answer a few honest questions and get a step-by-step, progressive plan — every movement
             with real form cues and an easier option, so you get stronger without getting hurt.
