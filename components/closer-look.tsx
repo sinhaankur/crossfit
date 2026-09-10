@@ -3,8 +3,9 @@
 import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import type { Movement } from "@/lib/movements";
-import { ChevronLeft, ChevronRight, ShieldAlert, Check, Sparkles, Dumbbell } from "lucide-react";
+import { ChevronLeft, ChevronRight, ShieldAlert, Check, Sparkles, Dumbbell, Activity } from "lucide-react";
 import { award, loadGame, levelFor } from "@/lib/game";
+import { MuscleMap } from "./muscle-map";
 
 // CloserLook — a SINGLE-SCREEN, gamified movement trainer. No long scroll: the 3D
 // human fills the stage, form steps advance in a compact control, muscles show in
@@ -21,6 +22,7 @@ export function CloserLook({ movements }: { movements: Movement[] }) {
   const [step, setStep] = useState(0);
   const [xp, setXp] = useState(0);
   const [justMastered, setJustMastered] = useState(false);
+  const [showMuscles, setShowMuscles] = useState(false);
   const seen = useRef<Set<number>>(new Set([0]));
   const m = movements[mi];
   const lvl = levelFor(xp);
@@ -67,21 +69,35 @@ export function CloserLook({ movements }: { movements: Movement[] }) {
 
       {/* stage — fills remaining height */}
       <div className="relative mt-2 min-h-0 flex-1 overflow-hidden rounded-3xl border border-[var(--line)] bg-[var(--card)]">
-        {/* the 3D human */}
-        <div className="absolute inset-0"><Human3D pattern={m.pattern} /></div>
-
-        {/* muscles — top-left overlay */}
-        <div className="absolute left-3 top-3 max-w-[46%] rounded-2xl bg-black/45 p-3 backdrop-blur-sm">
-          <p className="text-[10px] font-bold uppercase tracking-wide text-[var(--muted)]">Muscles worked</p>
-          <div className="mt-1.5 flex flex-wrap gap-1">
-            {m.primary.map((mu) => <span key={mu} className="rounded-full bg-[var(--accent)]/25 px-2 py-0.5 text-[11px] font-semibold text-[var(--accent)]">{mu}</span>)}
-            {m.secondary.slice(0, 3).map((mu) => <span key={mu} className="rounded-full bg-white/10 px-2 py-0.5 text-[11px] text-[var(--muted)]">{mu}</span>)}
-          </div>
+        {/* the 3D human, or the anatomical muscle map (which highlights the
+            active muscles for this movement) */}
+        <div className="absolute inset-0">
+          {showMuscles
+            ? <div className="grid h-full place-items-center overflow-auto p-4"><div className="w-full max-w-md"><MuscleMap pattern={m.pattern} /></div></div>
+            : <Human3D pattern={m.pattern} />}
         </div>
 
-        {/* mastered chip */}
+        {/* toggle: 3D human ↔ anatomy (muscles highlighted) */}
+        <button onClick={() => setShowMuscles((v) => !v)}
+          className="absolute right-3 top-3 flex items-center gap-1.5 rounded-full bg-black/55 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur-sm transition hover:bg-black/70">
+          <Activity className="h-3.5 w-3.5 text-[var(--accent)]" />
+          {showMuscles ? "Show 3D" : "Muscles worked"}
+        </button>
+
+        {/* quick muscle chips (only over the 3D view) */}
+        {!showMuscles && (
+          <div className="absolute left-3 top-3 max-w-[46%] rounded-2xl bg-black/45 p-3 backdrop-blur-sm">
+            <p className="text-[10px] font-bold uppercase tracking-wide text-[var(--muted)]">Muscles worked</p>
+            <div className="mt-1.5 flex flex-wrap gap-1">
+              {m.primary.map((mu) => <span key={mu} className="rounded-full bg-[var(--accent)]/25 px-2 py-0.5 text-[11px] font-semibold text-[var(--accent)]">{mu}</span>)}
+              {m.secondary.slice(0, 3).map((mu) => <span key={mu} className="rounded-full bg-white/10 px-2 py-0.5 text-[11px] text-[var(--muted)]">{mu}</span>)}
+            </div>
+          </div>
+        )}
+
+        {/* mastered chip — top-center so it never collides with the toggle */}
         {seen.current.size === m.steps.length && (
-          <div className="absolute right-3 top-3 flex items-center gap-1 rounded-full bg-emerald-500/90 px-3 py-1 text-xs font-bold text-white">
+          <div className="absolute left-1/2 top-3 flex -translate-x-1/2 items-center gap-1 rounded-full bg-emerald-500/90 px-3 py-1 text-xs font-bold text-white">
             <Check className="h-3.5 w-3.5" /> Mastered
           </div>
         )}
