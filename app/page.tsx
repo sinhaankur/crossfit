@@ -4,6 +4,7 @@ import { useState } from "react";
 import { buildPlan, type Profile, type BodyType, type Goal, type Diet, type Experience } from "@/lib/plan-engine";
 import type { Equipment } from "@/lib/movements";
 import { PlanView } from "@/components/plan-view";
+import { SiteNav } from "@/components/site-nav";
 
 // The front door: a short, honest form → a safe, progressive, step-by-step plan.
 // Everything runs on-device (no account, no server, no key). Anyone can use it.
@@ -59,6 +60,7 @@ export default function Home() {
 
   return (
     <main className="min-h-dvh">
+      <SiteNav />
       {/* Hero */}
       <section className="mx-auto max-w-3xl px-5 pt-14 pb-6 text-center">
         <p className="font-mono text-[11px] uppercase tracking-[0.3em] text-[var(--muted)]">CrossFit · a plan you can keep</p>
