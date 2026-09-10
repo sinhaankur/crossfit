@@ -1,0 +1,7 @@
+# Heavy raw anatomy data — not for the repo (Z-Anatomy is 303MB; re-download via
+# scripts). Keep the exact-data artifacts (TA2 map, build scripts, attribution).
+z-anatomy/
+z-anatomy.zip
+TA2-terminologia-anatomica.csv
+out/*.glb
+out/*.blend

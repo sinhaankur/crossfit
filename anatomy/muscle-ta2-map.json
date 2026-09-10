@@ -1,0 +1,107 @@
+{
+ "glutes": {
+  "ta2_id": "2598",
+  "en": "Gluteus maximus muscle",
+  "la": "Musculus gluteus maximus"
+ },
+ "quads": {
+  "ta2_id": "2613",
+  "en": "Quadriceps femoris muscle",
+  "la": "Musculus quadriceps femoris"
+ },
+ "hamstrings": {
+  "ta2_id": "2638",
+  "en": "Biceps femoris muscle",
+  "la": "Musculus biceps femoris"
+ },
+ "chest": {
+  "ta2_id": "2301",
+  "en": "Pectoralis major muscle",
+  "la": "Musculus pectoralis major"
+ },
+ "lats": {
+  "ta2_id": "2231",
+  "en": "Latissimus dorsi muscle",
+  "la": "Musculus latissimus dorsi"
+ },
+ "traps": {
+  "ta2_id": "2226",
+  "en": "Trapezius muscle",
+  "la": "Musculus trapezius"
+ },
+ "biceps": {
+  "ta2_id": "2464",
+  "en": "Biceps brachii muscle",
+  "la": "Musculus biceps brachii"
+ },
+ "triceps": {
+  "ta2_id": "2471",
+  "en": "Triceps brachii muscle",
+  "la": "Musculus triceps brachii"
+ },
+ "abs": {
+  "ta2_id": "2357",
+  "en": "Rectus abdominis muscle",
+  "la": "Musculus rectus abdominis"
+ },
+ "calves": {
+  "ta2_id": "2657",
+  "en": "Gastrocnemius muscle",
+  "la": "Musculus gastrocnemius"
+ },
+ "lower-back": {
+  "ta2_id": "2254",
+  "en": "Erector spinae",
+  "la": "Erector spinae"
+ },
+ "rhomboids": {
+  "ta2_id": "2232",
+  "en": "Rhomboid major muscle",
+  "la": "Musculus rhomboideus major"
+ },
+ "front-delt": {
+  "ta2_id": "2452",
+  "en": "Deltoid muscle",
+  "la": "Musculus deltoideus"
+ },
+ "obliques": {
+  "ta2_id": "2364",
+  "en": "External abdominal oblique muscle",
+  "la": "Musculus obliquus externus abdominis"
+ },
+ "forearms": {
+  "ta2_id": "2481",
+  "en": "Flexor carpi radialis",
+  "la": "Flexor radialis carpi"
+ },
+ "adductors": {
+  "ta2_id": "2630",
+  "en": "Adductor magnus",
+  "la": "Adductor magnus"
+ },
+ "rotator-cuff": {
+  "ta2_id": "2457",
+  "en": "Supraspinatus muscle",
+  "la": "Musculus supraspinatus"
+ },
+ "hip-flexors": {
+  "ta2_id": "2595",
+  "en": "Psoas major",
+  "la": "Psoas major"
+ },
+ "tibialis": {
+  "ta2_id": "2644",
+  "en": "Tibialis anterior muscle",
+  "la": "Musculus tibialis anterior"
+ },
+ "side-delt": {
+  "ta2_id": "2452",
+  "en": "Deltoid muscle",
+  "la": "Musculus deltoideus"
+ },
+ "rear-delt": {
+  "ta2_id": "2452",
+  "en": "Deltoid muscle",
+  "la": "Musculus deltoideus"
+ }
+}

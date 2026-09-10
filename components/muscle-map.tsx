@@ -25,6 +25,12 @@ export function MuscleMap({ pattern }: { pattern: Pattern }) {
         {primary.map((m) => <span key={m} className="rounded-full bg-[var(--accent)]/25 px-2 py-0.5 text-[10px] font-semibold text-[var(--accent)]">{MUSCLE_LABEL[m]}</span>)}
         {secondary.map((m) => <span key={m} className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] text-[var(--muted)]">{MUSCLE_LABEL[m]}</span>)}
       </div>
+      {/* anatomy attribution — muscle naming follows Terminologia Anatomica; the 3D
+          anatomy layer derives from Z-Anatomy (CC-BY-SA 4.0). */}
+      <p className="mt-1.5 text-[9px] text-[var(--muted)]/70">
+        Anatomy per Terminologia Anatomica · 3D layer from{" "}
+        <a href="https://github.com/Z-Anatomy" target="_blank" rel="noreferrer" className="underline">Z-Anatomy</a> (CC-BY-SA 4.0)
+      </p>
     </div>
   );
 }
