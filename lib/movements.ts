@@ -24,6 +24,11 @@ export interface Movement {
   safety: string;
   /** An easier version anyone can drop to (never leave someone stuck). */
   scale: string;
+  /** The big muscles this movement builds (prime movers). */
+  primary: string[];
+  /** The small/supporting muscles that also work — the detail that completes the
+   *  picture (rear delts, calves, forearms, rotator cuff, etc.). */
+  secondary: string[];
 }
 
 export const MOVEMENTS: Movement[] = [
@@ -38,6 +43,7 @@ export const MOVEMENTS: Movement[] = [
     ],
     safety: "Stop if your knees cave inward or your heels lift — reduce depth instead. Never bounce out of the bottom.",
     scale: "Squat to a chair/box and stand back up. Only go as low as you can control.",
+    primary: ["Quads", "Glutes"], secondary: ["Hamstrings", "Core", "Calves", "Adductors"],
   },
   {
     id: "box-step-up", name: "Box Step-Up", pattern: "squat", needs: ["box"], intensity: "gentle",
@@ -49,6 +55,7 @@ export const MOVEMENTS: Movement[] = [
     ],
     safety: "Use a box you can step onto without straining. Watch the edge; step down slowly — most trips happen on the way down.",
     scale: "Use a lower step, or hold a wall/rail for balance.",
+    primary: ["Quads", "Glutes"], secondary: ["Hamstrings", "Calves", "Core (balance)"],
   },
   {
     id: "deadlift", name: "Deadlift (light)", pattern: "hinge", needs: ["dumbbell"], intensity: "moderate",
@@ -60,6 +67,7 @@ export const MOVEMENTS: Movement[] = [
     ],
     safety: "A ROUNDED lower back is the #1 injury here. Keep the back flat and the weight LIGHT until the hinge feels natural. If your back rounds, the weight is too heavy.",
     scale: "Hinge with no weight (hands sliding down your thighs) to groove the pattern first.",
+    primary: ["Glutes", "Hamstrings"], secondary: ["Erector spinae (lower back)", "Lats", "Forearms (grip)", "Core"],
   },
   {
     id: "kb-swing", name: "Kettlebell Swing", pattern: "hinge", needs: ["kettlebell"], intensity: "moderate",
@@ -71,6 +79,7 @@ export const MOVEMENTS: Movement[] = [
     ],
     safety: "It's a hip snap, not an arm lift or a squat. Don't yank with your shoulders or over-arch your back at the top. Start light.",
     scale: "Do hip hinges with no weight, or a lighter bell to just eye level.",
+    primary: ["Glutes", "Hamstrings"], secondary: ["Core", "Shoulders", "Forearms (grip)", "Lower back"],
   },
   {
     id: "pushup", name: "Push-Up", pattern: "push", needs: ["none"], intensity: "moderate",
@@ -82,6 +91,7 @@ export const MOVEMENTS: Movement[] = [
     ],
     safety: "Keep your hips level — a sagging low back is the common strain. Elbows flared wide stresses the shoulders.",
     scale: "Push up from your knees, or hands on a wall/bench at an incline.",
+    primary: ["Chest (pectorals)", "Triceps"], secondary: ["Front delts", "Core", "Serratus anterior"],
   },
   {
     id: "db-press", name: "Dumbbell Shoulder Press", pattern: "push", needs: ["dumbbell"], intensity: "moderate",
@@ -93,6 +103,7 @@ export const MOVEMENTS: Movement[] = [
     ],
     safety: "Don't arch your lower back to help the press — brace and press straight up. Lighter weight, full control.",
     scale: "Press one arm at a time, or use lighter weights / a resistance band.",
+    primary: ["Shoulders (deltoids)", "Triceps"], secondary: ["Upper chest", "Core (anti-arch)", "Rotator cuff"],
   },
   {
     id: "ring-row", name: "Ring / Bar Row", pattern: "pull", needs: ["pullup-bar"], intensity: "gentle",
@@ -104,6 +115,7 @@ export const MOVEMENTS: Movement[] = [
     ],
     safety: "Keep your body in one line — don't let your hips sag. Move your feet forward to make it easier, not by cheating with a bent body.",
     scale: "Stand more upright (feet further back) so you pull less of your bodyweight.",
+    primary: ["Upper back (rhomboids)", "Lats"], secondary: ["Biceps", "Rear delts", "Forearms (grip)", "Core"],
   },
   {
     id: "hollow-hold", name: "Hollow Hold", pattern: "core", needs: ["none"], intensity: "gentle",
@@ -115,6 +127,7 @@ export const MOVEMENTS: Movement[] = [
     ],
     safety: "If your lower back arches off the floor, raise your legs higher or bend your knees — a gap under your back is the strain point.",
     scale: "Bend your knees, or hold with arms by your sides and legs higher.",
+    primary: ["Core (rectus abdominis)"], secondary: ["Hip flexors", "Quads", "Deep core (transverse abdominis)"],
   },
   {
     id: "plank", name: "Plank", pattern: "core", needs: ["none"], intensity: "gentle",
@@ -125,6 +138,7 @@ export const MOVEMENTS: Movement[] = [
     ],
     safety: "A sagging low back is the risk — keep hips level with shoulders. Stop the moment your form breaks; a short strong plank beats a long sloppy one.",
     scale: "Plank from your knees, or hands-on-a-bench incline plank.",
+    primary: ["Core (transverse abdominis)"], secondary: ["Shoulders", "Glutes", "Erector spinae"],
   },
   {
     id: "farmer-carry", name: "Farmer Carry", pattern: "carry", needs: ["dumbbell"], intensity: "gentle",
@@ -136,6 +150,7 @@ export const MOVEMENTS: Movement[] = [
     ],
     safety: "Don't lean to one side or let your shoulders round forward. Put the weights down safely — don't just drop from a hunched back.",
     scale: "Lighter weights, or carry one weight and switch hands halfway.",
+    primary: ["Forearms (grip)", "Traps"], secondary: ["Core", "Glutes", "Upper back", "Calves"],
   },
   {
     id: "row-bike", name: "Row / Bike / Brisk Walk", pattern: "cardio", needs: ["rower-bike"], intensity: "moderate",
@@ -147,6 +162,7 @@ export const MOVEMENTS: Movement[] = [
     ],
     safety: "Build the pace gradually — don't sprint cold. If you feel chest pain, dizziness, or can't catch your breath, STOP.",
     scale: "A brisk walk counts. Go by effort, not speed.",
+    primary: ["Legs", "Heart & lungs (cardio)"], secondary: ["Back", "Arms", "Core"],
   },
   {
     id: "jump-rope", name: "Jump Rope / Line Hops", pattern: "cardio", needs: ["jump-rope"], intensity: "moderate",
@@ -157,6 +173,7 @@ export const MOVEMENTS: Movement[] = [
     ],
     safety: "Land softly through the balls of your feet — don't stomp on straight legs (that jars ankles/knees). Skip if you have knee/ankle issues.",
     scale: "No rope? Do quick small hops over a line on the floor, or fast marching in place.",
+    primary: ["Calves", "Heart & lungs (cardio)"], secondary: ["Shoulders", "Forearms", "Core", "Feet & ankles"],
   },
   {
     id: "cat-cow", name: "Cat–Cow (mobility)", pattern: "mobility", needs: ["none"], intensity: "gentle",
@@ -168,6 +185,7 @@ export const MOVEMENTS: Movement[] = [
     ],
     safety: "Move gently within a comfortable range — this is a warm-up/cool-down, never force it.",
     scale: "Smaller range of motion; stop at any pinch.",
+    primary: ["Spinal mobility"], secondary: ["Core", "Neck", "Shoulders"],
   },
   {
     id: "world-greatest", name: "World's Greatest Stretch (mobility)", pattern: "mobility", needs: ["none"], intensity: "gentle",
@@ -179,6 +197,7 @@ export const MOVEMENTS: Movement[] = [
     ],
     safety: "Ease into the range — never bounce. If a knee or hip complains, shorten the lunge.",
     scale: "Do it holding onto a chair, or a shallower lunge.",
+    primary: ["Hips", "Thoracic spine (mid-back)"], secondary: ["Hamstrings", "Glutes", "Shoulders"],
   },
 ];
 

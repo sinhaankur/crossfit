@@ -73,6 +73,19 @@ export function CloserLook({ movements }: { movements: Movement[] }) {
         {/* Right — the demonstrating human (3D when a model is present, else SVG) */}
         <div className="min-w-0">
           <Human3D pattern={m.pattern} />
+          {/* Muscles worked — primary + the small supporting ones. */}
+          <div className="mt-3 rounded-2xl bg-black/25 p-4">
+            <p className="text-[13px] font-bold uppercase tracking-wide text-[var(--muted)]">Muscles worked</p>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {m.primary.map((mu) => (
+                <span key={mu} className="rounded-full bg-[var(--accent)]/20 px-2.5 py-1 text-xs font-semibold text-[var(--accent)]">{mu}</span>
+              ))}
+              {m.secondary.map((mu) => (
+                <span key={mu} className="rounded-full bg-white/5 px-2.5 py-1 text-xs text-[var(--muted)]">{mu}</span>
+              ))}
+            </div>
+            <p className="mt-2 text-[11px] text-[var(--muted)]"><span className="text-[var(--accent)]">●</span> prime movers · <span className="opacity-60">●</span> supporting &amp; small muscles</p>
+          </div>
         </div>
       </div>
     </section>
