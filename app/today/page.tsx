@@ -6,6 +6,7 @@ import { trainedDates, currentStreak, daysThisWeek, daysThisMonth, planSessionsD
 import { loadLog, personalRecords, SCORING_LABEL } from "@/lib/wod-log";
 import { loadGoals, goalProgress, type Goal } from "@/lib/body";
 import { loadOneRMs, LIFT_LABEL, type OneRMs } from "@/lib/strength";
+import { lifeAdded } from "@/lib/game";
 
 // /today — the dashboard home for someone who's using the app: one glance at
 // where you stand. This week's training, your streak, active goals, top PRs, and
@@ -55,6 +56,15 @@ export default function TodayPage() {
               <Ring value={week} of={7} label="This week" />
               <Big n={streak} label="Day streak" accent unit="🔥" />
               <Big n={month} label="This month" />
+            </div>
+
+            {/* life added — the payoff: each workout extends your life */}
+            <div className="mt-3 flex items-center gap-3 rounded-2xl border border-[var(--accent)]/30 bg-[var(--accent)]/[0.07] p-4">
+              <span className="text-2xl">❤️</span>
+              <div>
+                <p className="text-sm font-semibold">~{lifeAdded(workouts).hours} hours of life added</p>
+                <p className="text-xs text-[var(--muted)]">Every session you finish is time back — a conservative estimate from exercise-longevity research, not a promise.</p>
+              </div>
             </div>
 
             {/* goals */}

@@ -18,7 +18,7 @@ const LIFTS: Lift[] = ["back-squat", "deadlift", "shoulder-press", "bench-press"
 const PCTS = [0.7, 0.75, 0.8, 0.85, 0.9];
 
 export default function BodyPage() {
-  const [tab, setTab] = useState<"lifts" | "measure" | "goals">("lifts");
+  const [tab, setTab] = useState<"lifts" | "measure" | "bmi" | "goals">("lifts");
   return (
     <main className="min-h-dvh">
       <SiteNav />
@@ -26,17 +26,86 @@ export default function BodyPage() {
         <h1 className="text-3xl font-bold">Build your body</h1>
         <p className="mt-2 text-[var(--fg)]/70">Your lifts, your measurements, your goals — this is where you actually build, and where you see it change.</p>
         <div className="mt-5 flex gap-1 rounded-full bg-white/5 p-1 text-sm">
-          {(["lifts", "measure", "goals"] as const).map((t) => (
-            <button key={t} onClick={() => setTab(t)} className={`flex-1 rounded-full py-2 font-semibold capitalize transition ${tab === t ? "bg-[var(--accent)] text-white" : "text-[var(--muted)]"}`}>{t}</button>
+          {(["lifts", "measure", "bmi", "goals"] as const).map((t) => (
+            <button key={t} onClick={() => setTab(t)} className={`flex-1 rounded-full py-2 font-semibold uppercase transition ${tab === t ? "bg-[var(--accent)] text-white" : "text-[var(--muted)]"}`}>{t}</button>
           ))}
         </div>
         {tab === "lifts" && <Lifts />}
         {tab === "measure" && <Measure />}
+        {tab === "bmi" && <BMI />}
         {tab === "goals" && <Goals />}
       </div>
     </main>
   );
 }
+
+function BMI() {
+  const [unit, setUnit] = useState<"metric" | "imperial">("metric");
+  const [h, setH] = useState(""); const [w, setW] = useState("");
+  let bmi = 0;
+  if (h && w) {
+    if (unit === "metric") { const m = +h / 100; bmi = m > 0 ? +w / (m * m) : 0; }
+    else { bmi = +h > 0 ? (703 * +w) / (+h * +h) : 0; }
+  }
+  const band = bmiBand(bmi);
+  return (
+    <div className="mt-6 space-y-5">
+      <div className="rounded-2xl border border-[var(--line)] bg-[var(--card)] p-5">
+        <div className="flex items-center justify-between">
+          <p className="text-sm font-bold uppercase tracking-wide text-[var(--muted)]">BMI calculator</p>
+          <div className="flex gap-1 rounded-full bg-white/5 p-0.5 text-xs">
+            {(["metric", "imperial"] as const).map((u) => (
+              <button key={u} onClick={() => { setUnit(u); setH(""); setW(""); }} className={`rounded-full px-2.5 py-1 font-semibold capitalize ${unit === u ? "bg-[var(--accent)] text-white" : "text-[var(--muted)]"}`}>{u}</button>
+            ))}
+          </div>
+        </div>
+        <div className="mt-3 grid grid-cols-2 gap-2">
+          <label className="text-xs text-[var(--muted)]">Height ({unit === "metric" ? "cm" : "in"})<input value={h} onChange={(e) => setH(e.target.value)} inputMode="decimal" className={inp} /></label>
+          <label className="text-xs text-[var(--muted)]">Weight ({unit === "metric" ? "kg" : "lb"})<input value={w} onChange={(e) => setW(e.target.value)} inputMode="decimal" className={inp} /></label>
+        </div>
+        {bmi > 0 && (
+          <div className="mt-4 rounded-xl bg-black/25 p-4 text-center">
+            <p className="text-4xl font-bold tabular-nums" style={{ color: band.color }}>{bmi.toFixed(1)}</p>
+            <p className="mt-1 text-sm font-semibold" style={{ color: band.color }}>{band.label}</p>
+            {/* scale */}
+            <div className="mt-3 h-2 overflow-hidden rounded-full bg-gradient-to-r from-sky-400 via-emerald-400 via-40% to-rose-500" />
+            <div className="mt-1 flex justify-between text-[10px] text-[var(--muted)]"><span>18.5</span><span>25</span><span>30</span></div>
+          </div>
+        )}
+        <p className="mt-3 text-xs text-[var(--muted)]">
+          BMI is a rough screen, not the truth — it can&rsquo;t tell muscle from fat, so athletes often read &ldquo;overweight.&rdquo; Use it alongside your measurements and how you feel, not on its own.
+        </p>
+      </div>
+
+      <div className="rounded-2xl border border-[var(--line)] bg-[var(--card)] p-5">
+        <p className="text-sm font-bold uppercase tracking-wide text-[var(--muted)]">Apps that help</p>
+        <p className="mt-1 text-sm text-[var(--fg)]/70">Kelo focuses on training. For the rest of the picture, these pair well:</p>
+        <ul className="mt-3 space-y-2 text-sm">
+          {HELP_APPS.map((a) => (
+            <li key={a.name} className="flex items-start gap-2 rounded-xl bg-black/20 p-3">
+              <span className="text-lg">{a.emoji}</span>
+              <div><p className="font-semibold">{a.name}</p><p className="text-xs text-[var(--muted)]">{a.what}</p></div>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
+}
+
+function bmiBand(bmi: number) {
+  if (bmi <= 0) return { label: "", color: "var(--fg)" };
+  if (bmi < 18.5) return { label: "Underweight", color: "#38bdf8" };
+  if (bmi < 25) return { label: "Healthy range", color: "#34d399" };
+  if (bmi < 30) return { label: "Overweight", color: "#fbbf24" };
+  return { label: "Obese range", color: "#f43f5e" };
+}
+const HELP_APPS = [
+  { name: "Apple Health / Google Fit", emoji: "❤️", what: "Steps, heart rate, sleep — the baseline your body runs on." },
+  { name: "A food log (MacroFactor, Cronometer)", emoji: "🥗", what: "Track protein + calories to actually build or lean out." },
+  { name: "Strava", emoji: "🏃", what: "Log runs and rides; pairs with the cardio side of your training." },
+  { name: "Kelo (this app)", emoji: "💪", what: "Your plan, form, lifts, and progress — the strength & CrossFit engine." },
+];
 
 function Lifts() {
   const [oneRMs, setOneRMs] = useState<OneRMs>({});

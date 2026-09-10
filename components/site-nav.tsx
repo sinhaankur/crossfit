@@ -29,9 +29,10 @@ const NAV: Group[] = [
   {
     href: "/calendar", label: "Progress",
     children: [
-      { href: "/body", label: "Build (lifts · body · goals)" },
+      { href: "/body", label: "Build (lifts · body · BMI · goals)" },
       { href: "/log", label: "Workout log" },
       { href: "/calendar", label: "Consistency calendar" },
+      { href: "/features", label: "Features & roadmap" },
     ],
   },
 ];

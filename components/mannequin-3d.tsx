@@ -2,7 +2,7 @@
 
 import { useMemo, useRef } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
-import { OrbitControls, Environment, ContactShadows } from "@react-three/drei";
+import { OrbitControls, Environment, ContactShadows, Bounds } from "@react-three/drei";
 import * as THREE from "three";
 import type { Pattern } from "@/lib/movements";
 
@@ -23,14 +23,22 @@ const ACCENT = "#f43f5e";
 export function Mannequin3D({ pattern }: { pattern: Pattern }) {
   return (
     <div className="relative aspect-[4/5] w-full overflow-hidden rounded-2xl bg-gradient-to-b from-white/[0.06] to-black/25">
-      <Canvas camera={{ position: [0, 1.0, 4.2], fov: 38 }} dpr={[1, 2]} shadows>
-        <hemisphereLight args={["#ffffff", "#20222b", 0.7]} />
+      <Canvas camera={{ position: [1.5, 0.3, 7.5], fov: 42 }} dpr={[1, 2]} shadows>
+        <hemisphereLight args={["#ffffff", "#20222b", 0.75]} />
         <directionalLight position={[3, 6, 4]} intensity={1.4} castShadow shadow-mapSize={[1024, 1024]} />
         <directionalLight position={[-4, 2, -2]} intensity={0.4} color={ACCENT} />
-        <Figure pattern={pattern} />
-        <ContactShadows position={[0, -1.15, 0]} opacity={0.5} scale={5} blur={2.6} far={2} />
+        {/* Bounds auto-fits the camera to the figure's real bounding box — no more
+            hand-tuned offsets; it always frames the whole body + its equipment. */}
+        <Bounds fit clip observe margin={1.15}>
+          <Figure pattern={pattern} />
+        </Bounds>
+        <ContactShadows position={[0, -1.5, 0]} opacity={0.5} scale={5} blur={2.6} far={2} />
         <Environment preset="studio" />
-        <OrbitControls enablePan={false} minDistance={2.6} maxDistance={7} minPolarAngle={0.4} maxPolarAngle={Math.PI / 1.7} autoRotate autoRotateSpeed={0.6} />
+        <OrbitControls
+          enablePan={false}
+          minPolarAngle={0.6} maxPolarAngle={Math.PI / 1.9}
+          autoRotate autoRotateSpeed={0.4}
+        />
       </Canvas>
       <div className="pointer-events-none absolute bottom-2 left-0 right-0 text-center text-[10px] font-medium uppercase tracking-widest text-white/40">
         drag to orbit · scroll to zoom
@@ -55,12 +63,15 @@ function Figure({ pattern }: { pattern: Pattern }) {
   const mat = useMemo(() => new THREE.MeshStandardMaterial({ color: SKIN, roughness: 0.55, metalness: 0.05 }), []);
   const matAccent = useMemo(() => new THREE.MeshStandardMaterial({ color: ACCENT, roughness: 0.5 }), []);
 
+  const gear = useRef<THREE.Group>(null);
+
   useFrame(({ clock }) => {
     const period = 4.2;
     const raw = (clock.elapsedTime % period) / period;      // 0..1
     const tri = raw < 0.5 ? raw * 2 : (1 - raw) * 2;         // 0..1..0
     const t = tri < 0.5 ? 2 * tri * tri : 1 - Math.pow(-2 * tri + 2, 2) / 2; // easeInOut
     pose(pattern, t, { hips, torso, thighL, thighR, shinL, shinR, armL, armR, foreL, foreR });
+    moveGear(pattern, t, gear);
   });
 
   // Limb builder: a group positioned at its joint, with a capsule mesh offset down.
@@ -78,39 +89,44 @@ function Figure({ pattern }: { pattern: Pattern }) {
 
   return (
     <group ref={root} position={[0, 0.1, 0]} scale={1.05}>
+      {/* equipment props — what makes the movement READABLE */}
+      <group ref={gear}><Equipment pattern={pattern} /></group>
+
       <group ref={hips} position={[0, -0.15, 0]}>
         {/* pelvis */}
         <mesh castShadow material={mat}><capsuleGeometry args={[0.2, 0.16, 6, 12]} /></mesh>
 
-        {/* torso group (leans/rotates) */}
-        <group ref={torso} position={[0, 0.16, 0]}>
-          <mesh position={[0, 0.34, 0]} castShadow material={mat}>
-            {/* chest — slightly tapered box for a fit torso */}
-            <capsuleGeometry args={[0.24, 0.5, 6, 12]} />
+        {/* torso group (leans/rotates) — athletic V-taper */}
+        <group ref={torso} position={[0, 0.18, 0]}>
+          {/* chest (broad top) */}
+          <mesh position={[0, 0.42, 0]} scale={[1.15, 1, 0.7]} castShadow material={mat}>
+            <capsuleGeometry args={[0.2, 0.34, 8, 16]} />
           </mesh>
-          {/* accent shirt band */}
-          <mesh position={[0, 0.2, 0]} castShadow material={matAccent}>
-            <capsuleGeometry args={[0.245, 0.18, 6, 12]} />
+          {/* waist (narrower) — accent band */}
+          <mesh position={[0, 0.12, 0]} scale={[0.85, 1, 0.7]} castShadow material={matAccent}>
+            <capsuleGeometry args={[0.19, 0.2, 8, 16]} />
           </mesh>
-          {/* neck + head */}
-          <mesh position={[0, 0.72, 0]} castShadow material={mat}><cylinderGeometry args={[0.07, 0.08, 0.12, 12]} /></mesh>
-          <mesh position={[0, 0.9, 0]} castShadow material={mat}><sphereGeometry args={[0.17, 20, 20]} /></mesh>
+          {/* shoulders */}
+          <mesh position={[0, 0.6, 0]} scale={[1, 0.6, 0.7]} castShadow material={mat}><sphereGeometry args={[0.28, 20, 16]} /></mesh>
+          {/* neck + head (smaller head = taller read) */}
+          <mesh position={[0, 0.74, 0]} castShadow material={mat}><cylinderGeometry args={[0.06, 0.07, 0.12, 12]} /></mesh>
+          <mesh position={[0, 0.9, 0]} castShadow material={mat}><sphereGeometry args={[0.14, 20, 20]} /></mesh>
 
-          {/* arms — from shoulders */}
-          <Bone len={0.42} r={0.075} joint={[-0.3, 0.55, 0]} mref={armL} material={mat}>
-            <Bone len={0.4} r={0.06} joint={[0, -0.42, 0]} mref={foreL} material={mat} />
+          {/* arms — longer, from broad shoulders */}
+          <Bone len={0.48} r={0.065} joint={[-0.34, 0.58, 0]} mref={armL} material={mat}>
+            <Bone len={0.44} r={0.052} joint={[0, -0.48, 0]} mref={foreL} material={mat} />
           </Bone>
-          <Bone len={0.42} r={0.075} joint={[0.3, 0.55, 0]} mref={armR} material={mat}>
-            <Bone len={0.4} r={0.06} joint={[0, -0.42, 0]} mref={foreR} material={mat} />
+          <Bone len={0.48} r={0.065} joint={[0.34, 0.58, 0]} mref={armR} material={mat}>
+            <Bone len={0.44} r={0.052} joint={[0, -0.48, 0]} mref={foreR} material={mat} />
           </Bone>
         </group>
 
-        {/* legs — from hips */}
-        <Bone len={0.52} r={0.1} joint={[-0.14, 0, 0]} mref={thighL} material={mat}>
-          <Bone len={0.5} r={0.08} joint={[0, -0.52, 0]} mref={shinL} material={mat} />
+        {/* legs — longer, from hips */}
+        <Bone len={0.62} r={0.09} joint={[-0.13, 0, 0]} mref={thighL} material={mat}>
+          <Bone len={0.6} r={0.07} joint={[0, -0.62, 0]} mref={shinL} material={mat} />
         </Bone>
-        <Bone len={0.52} r={0.1} joint={[0.14, 0, 0]} mref={thighR} material={mat}>
-          <Bone len={0.5} r={0.08} joint={[0, -0.52, 0]} mref={shinR} material={mat} />
+        <Bone len={0.62} r={0.09} joint={[0.13, 0, 0]} mref={thighR} material={mat}>
+          <Bone len={0.6} r={0.07} joint={[0, -0.62, 0]} mref={shinR} material={mat} />
         </Bone>
       </group>
     </group>
@@ -183,5 +199,102 @@ function pose(pattern: Pattern, t: number, r: Refs) {
       set(r.thighL, t * 0.2); set(r.thighR, t * 0.2);
       break;
     }
+  }
+}
+
+const METAL = "#c7ccd6";
+const RUBBER = "#2a2d36";
+const WOOD = "#8a6a48";
+
+// The gear each movement uses — a barbell, dumbbells, a kettlebell, a box, a bar.
+// Rendered in a group that `moveGear` positions to track the hands each frame.
+function Equipment({ pattern }: { pattern: Pattern }) {
+  switch (pattern) {
+    case "hinge": // barbell (deadlift) OR kettlebell — show the barbell, it's clearest
+      return (
+        <group>
+          {/* bar */}
+          <mesh rotation={[0, 0, Math.PI / 2]} castShadow>
+            <cylinderGeometry args={[0.035, 0.035, 1.9, 16]} />
+            <meshStandardMaterial color={METAL} roughness={0.3} metalness={0.7} />
+          </mesh>
+          {/* plates */}
+          {[-0.8, 0.8].map((x) => (
+            <mesh key={x} position={[x, 0, 0]} rotation={[0, 0, Math.PI / 2]} castShadow>
+              <cylinderGeometry args={[0.28, 0.28, 0.09, 24]} />
+              <meshStandardMaterial color={RUBBER} roughness={0.8} />
+            </mesh>
+          ))}
+        </group>
+      );
+    case "push": // two dumbbells
+      return (
+        <group>
+          {[-0.34, 0.34].map((x) => (
+            <group key={x} position={[x, 0, 0]}>
+              <mesh rotation={[0, 0, Math.PI / 2]} castShadow><cylinderGeometry args={[0.03, 0.03, 0.26, 12]} /><meshStandardMaterial color={METAL} metalness={0.6} roughness={0.35} /></mesh>
+              {[-0.15, 0.15].map((o) => <mesh key={o} position={[o, 0, 0]} rotation={[0, 0, Math.PI / 2]} castShadow><cylinderGeometry args={[0.1, 0.1, 0.1, 16]} /><meshStandardMaterial color={RUBBER} roughness={0.8} /></mesh>)}
+            </group>
+          ))}
+        </group>
+      );
+    case "carry": // farmer-carry dumbbells at the sides
+      return (
+        <group>
+          {[-0.5, 0.5].map((x) => (
+            <group key={x} position={[x, 0, 0]}>
+              <mesh castShadow><cylinderGeometry args={[0.025, 0.025, 0.18, 12]} /><meshStandardMaterial color={METAL} metalness={0.6} roughness={0.35} /></mesh>
+              {[-0.12, 0.12].map((o) => <mesh key={o} position={[0, o, 0]} castShadow><cylinderGeometry args={[0.11, 0.11, 0.09, 16]} /><meshStandardMaterial color={RUBBER} roughness={0.8} /></mesh>)}
+            </group>
+          ))}
+        </group>
+      );
+    case "pull": // a pull-up bar overhead
+      return (
+        <group position={[0, 1.3, 0]}>
+          <mesh rotation={[0, 0, Math.PI / 2]} castShadow><cylinderGeometry args={[0.035, 0.035, 1.6, 16]} /><meshStandardMaterial color={METAL} metalness={0.7} roughness={0.3} /></mesh>
+          {[-0.8, 0.8].map((x) => <mesh key={x} position={[x, 0.4, 0]} castShadow><boxGeometry args={[0.06, 0.8, 0.06]} /><meshStandardMaterial color={METAL} metalness={0.5} roughness={0.4} /></mesh>)}
+        </group>
+      );
+    case "squat": // a box behind for box-squat reference
+      return (
+        <group position={[0, -0.85, -0.15]}>
+          <mesh castShadow><boxGeometry args={[0.6, 0.5, 0.5]} /><meshStandardMaterial color={WOOD} roughness={0.85} /></mesh>
+        </group>
+      );
+    default:
+      return null;
+  }
+}
+
+// Position the gear group so it tracks the hands / stays where it belongs.
+function moveGear(pattern: Pattern, t: number, gear: React.RefObject<THREE.Group | null>) {
+  const g = gear.current; if (!g) return;
+  switch (pattern) {
+    case "hinge": {
+      // barbell rises from the floor to hip height with the lift
+      g.position.set(0, -1.05 + t * 0.75, 0.34);
+      g.rotation.set(0, 0, 0);
+      break;
+    }
+    case "push": {
+      // dumbbells travel from shoulders to overhead
+      g.position.set(0, 0.55 + t * 0.75, 0);
+      break;
+    }
+    case "carry": {
+      const s = Math.sin(t * Math.PI * 2);
+      g.position.set(0, -0.55 + Math.abs(s) * 0.03, 0);
+      break;
+    }
+    case "pull": {
+      g.position.set(0, 0, 0); // bar is fixed overhead
+      break;
+    }
+    case "squat": {
+      g.position.set(0, 0, -0.15);
+      break;
+    }
+    default: g.position.set(0, -5, 0); // hide
   }
 }
