@@ -3,6 +3,14 @@
 import { useState } from "react";
 import { MOVEMENTS, type Pattern } from "@/lib/movements";
 import { SiteNav } from "@/components/site-nav";
+import { CloserLook } from "@/components/closer-look";
+
+// One representative movement per pattern for the "closer look" figure gallery,
+// so the demonstrating figure covers every movement family.
+const FEATURED = (() => {
+  const seen = new Set<Pattern>();
+  return MOVEMENTS.filter((m) => (seen.has(m.pattern) ? false : (seen.add(m.pattern), true)));
+})();
 
 // The movement library — every exercise with numbered form steps, its safety
 // note, and an easier scale. Filterable by pattern. A real reference page.
@@ -17,6 +25,12 @@ export default function MovementsPage() {
   return (
     <main className="min-h-dvh">
       <SiteNav />
+
+      {/* Apple-style "closer look" figure gallery */}
+      <div className="py-8">
+        <CloserLook movements={FEATURED} />
+      </div>
+
       <div className="mx-auto max-w-3xl px-5 py-8">
         <h1 className="text-3xl font-bold">Movement library</h1>
         <p className="mt-2 text-[var(--fg)]/70">
