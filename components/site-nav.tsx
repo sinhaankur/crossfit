@@ -2,11 +2,12 @@
 
 import { usePathname } from "next/navigation";
 
-// The shared primary nav across the site — Plan · Log · Movements · Benchmarks.
-// Sticky, mobile-first, with an active state. Keeps the four surfaces one product.
+// The shared primary nav — Plan · Build · Log · Movements · Benchmarks.
+// Sticky, mobile-first, with an active state. Keeps every surface one product.
 
 const LINKS = [
   { href: "/", label: "Plan" },
+  { href: "/body", label: "Build" },
   { href: "/log", label: "Log" },
   { href: "/movements", label: "Movements" },
   { href: "/benchmarks", label: "Benchmarks" },
