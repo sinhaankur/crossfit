@@ -1,8 +1,15 @@
 "use client";
 
 import { useState } from "react";
+import dynamic from "next/dynamic";
 import type { Movement } from "@/lib/movements";
-import { FigureStage } from "./figure-stage";
+
+// The 3D human is loaded client-only (it touches WebGL/window) and it itself
+// falls back to the SVG FigureStage when there's no model file or no WebGL.
+const Human3D = dynamic(() => import("./human-3d").then((m) => m.Human3D), {
+  ssr: false,
+  loading: () => <div className="aspect-[4/5] w-full animate-pulse rounded-2xl bg-white/[0.04]" />,
+});
 
 // CloserLook — the Apple "Take a closer look" gallery, for a movement. Big
 // demonstrating figure on the right (drag to rotate), the form STEPS as a
@@ -63,9 +70,9 @@ export function CloserLook({ movements }: { movements: Movement[] }) {
           </div>
         </div>
 
-        {/* Right — the demonstrating figure */}
+        {/* Right — the demonstrating human (3D when a model is present, else SVG) */}
         <div className="min-w-0">
-          <FigureStage pattern={m.pattern} />
+          <Human3D pattern={m.pattern} />
         </div>
       </div>
     </section>
