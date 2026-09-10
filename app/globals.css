@@ -1,0 +1,14 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #0e0f13;
+  --card: #16181f;
+  --fg: #f3f4f6;
+  --muted: #9aa0aa;
+  --accent: #f43f5e;   /* CrossFit energy — rose/red */
+  --line: rgba(255,255,255,0.08);
+}
+html, body { background: var(--bg); color: var(--fg); }
+body { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
