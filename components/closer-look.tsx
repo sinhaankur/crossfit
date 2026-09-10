@@ -12,7 +12,9 @@ import { MuscleMap } from "./muscle-map";
 // a corner, and finishing every step "masters" the movement (XP + confetti). Fits
 // in one viewport like an app screen.
 
-const Human3D = dynamic(() => import("./human-3d").then((m) => m.Human3D), {
+// The real anatomical human (Z-Anatomy muscle body) — the default 3D view. Loaded
+// client-only (WebGL/window). Falls back to the 2D map inside if it can't load.
+const AnatomyHuman = dynamic(() => import("./anatomy-human").then((m) => m.AnatomyHuman), {
   ssr: false,
   loading: () => <div className="h-full w-full animate-pulse rounded-2xl bg-white/[0.04]" />,
 });
@@ -69,19 +71,19 @@ export function CloserLook({ movements }: { movements: Movement[] }) {
 
       {/* stage — fills remaining height */}
       <div className="relative mt-2 min-h-0 flex-1 overflow-hidden rounded-3xl border border-[var(--line)] bg-[var(--card)]">
-        {/* the 3D human, or the anatomical muscle map (which highlights the
-            active muscles for this movement) */}
+        {/* the real 3D anatomical human (worked muscles glow), or the 2D
+            front/back muscle map — toggle between them */}
         <div className="absolute inset-0">
           {showMuscles
             ? <div className="grid h-full place-items-center overflow-auto p-4"><div className="w-full max-w-md"><MuscleMap pattern={m.pattern} /></div></div>
-            : <Human3D pattern={m.pattern} />}
+            : <AnatomyHuman pattern={m.pattern} />}
         </div>
 
-        {/* toggle: 3D human ↔ anatomy (muscles highlighted) */}
+        {/* toggle: 3D anatomy ↔ 2D map */}
         <button onClick={() => setShowMuscles((v) => !v)}
           className="absolute right-3 top-3 flex items-center gap-1.5 rounded-full bg-black/55 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur-sm transition hover:bg-black/70">
           <Activity className="h-3.5 w-3.5 text-[var(--accent)]" />
-          {showMuscles ? "Show 3D" : "Muscles worked"}
+          {showMuscles ? "3D body" : "2D map"}
         </button>
 
         {/* quick muscle chips (only over the 3D view) */}
