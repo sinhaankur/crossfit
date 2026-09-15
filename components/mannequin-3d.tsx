@@ -18,7 +18,7 @@ import type { Pattern } from "@/lib/movements";
 // © Ankur Sinha.
 
 const SKIN = "#e8a17f"; // warm neutral
-const ACCENT = "#f43f5e";
+const ACCENT = "#3f8cff";
 
 export function Mannequin3D({ pattern }: { pattern: Pattern }) {
   return (

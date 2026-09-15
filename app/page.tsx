@@ -83,7 +83,7 @@ export default function Home() {
             Consistency beats extremes.
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-            <a href="#build" className="rounded-full bg-[var(--accent)] px-6 py-3 text-sm font-bold text-white shadow-lg shadow-rose-500/20 transition hover:brightness-110">
+            <a href="#build" className="rounded-full bg-[var(--accent)] px-6 py-3 text-sm font-bold text-white shadow-lg shadow-sky-500/20 transition hover:brightness-110">
               Build my plan
             </a>
             <a href="/movements" className="rounded-full border border-white/15 px-6 py-3 text-sm font-semibold text-[var(--fg)]/85 transition hover:border-white/40">

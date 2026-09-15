@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import type { Movement } from "@/lib/movements";
-import { ChevronLeft, ChevronRight, ShieldAlert, Check, Sparkles, Dumbbell, Activity } from "lucide-react";
+import { ChevronLeft, ChevronRight, ShieldAlert, Check, Sparkles, Dumbbell, Activity, PersonStanding } from "lucide-react";
 import { award, loadGame, levelFor } from "@/lib/game";
 import { MuscleMap } from "./muscle-map";
 
@@ -19,12 +19,22 @@ const AnatomyHuman = dynamic(() => import("./anatomy-human").then((m) => m.Anato
   loading: () => <div className="h-full w-full animate-pulse rounded-2xl bg-white/[0.04]" />,
 });
 
+// The rigged figure DOING the rep, with its equipment (barbell / pull-up bar /
+// box / mat). Complements the anatomy view: muscles show WHAT's worked, this
+// shows HOW it's done + the gear, so the movement reads at a glance.
+const Human3D = dynamic(() => import("./human-3d").then((m) => m.Human3D), {
+  ssr: false,
+  loading: () => <div className="h-full w-full animate-pulse rounded-2xl bg-white/[0.04]" />,
+});
+
 export function CloserLook({ movements }: { movements: Movement[] }) {
   const [mi, setMi] = useState(0);
   const [step, setStep] = useState(0);
   const [xp, setXp] = useState(0);
   const [justMastered, setJustMastered] = useState(false);
-  const [showMuscles, setShowMuscles] = useState(false);
+  // Three views: the rigged figure doing the rep with gear (default — clearest
+  // "how"), the anatomical muscle body (what's worked), the flat 2D map.
+  const [view, setView] = useState<"action" | "anatomy" | "map">("action");
   const seen = useRef<Set<number>>(new Set([0]));
   const m = movements[mi];
   const lvl = levelFor(xp);
@@ -71,23 +81,33 @@ export function CloserLook({ movements }: { movements: Movement[] }) {
 
       {/* stage — fills remaining height */}
       <div className="relative mt-2 min-h-0 flex-1 overflow-hidden rounded-3xl border border-[var(--line)] bg-[var(--card)]">
-        {/* the real 3D anatomical human (worked muscles glow), or the 2D
-            front/back muscle map — toggle between them */}
+        {/* Three synced views of the same movement: the rigged figure doing the
+            rep WITH its equipment (default — clearest "how"), the anatomical
+            muscle body (what's worked, glowing), the flat 2D map. */}
         <div className="absolute inset-0">
-          {showMuscles
+          {view === "map"
             ? <div className="grid h-full place-items-center overflow-auto p-4"><div className="w-full max-w-md"><MuscleMap pattern={m.pattern} /></div></div>
-            : <AnatomyHuman pattern={m.pattern} />}
+            : view === "anatomy"
+              ? <AnatomyHuman pattern={m.pattern} />
+              : <Human3D pattern={m.pattern} />}
         </div>
 
-        {/* toggle: 3D anatomy ↔ 2D map */}
-        <button onClick={() => setShowMuscles((v) => !v)}
-          className="absolute right-3 top-3 flex items-center gap-1.5 rounded-full bg-black/55 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur-sm transition hover:bg-black/70">
-          <Activity className="h-3.5 w-3.5 text-[var(--accent)]" />
-          {showMuscles ? "3D body" : "2D map"}
-        </button>
+        {/* view switch: Action (rep + gear) · Muscles · Map — a 3-segment pill */}
+        <div className="absolute right-3 top-3 flex items-center gap-0.5 rounded-full bg-black/55 p-0.5 backdrop-blur-sm">
+          {([
+            ["action", PersonStanding, "Action"],
+            ["anatomy", Activity, "Muscles"],
+            ["map", Dumbbell, "Map"],
+          ] as const).map(([key, Icon, label]) => (
+            <button key={key} onClick={() => setView(key)}
+              className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold transition ${view === key ? "bg-[var(--accent)] text-white" : "text-white/70 hover:text-white"}`}>
+              <Icon className="h-3.5 w-3.5" /> {label}
+            </button>
+          ))}
+        </div>
 
-        {/* quick muscle chips (only over the 3D view) */}
-        {!showMuscles && (
+        {/* quick muscle chips (over the figure views, not the flat map) */}
+        {view !== "map" && (
           <div className="absolute left-3 top-3 max-w-[46%] rounded-2xl bg-black/45 p-3 backdrop-blur-sm">
             <p className="text-[10px] font-bold uppercase tracking-wide text-[var(--muted)]">Muscles worked</p>
             <div className="mt-1.5 flex flex-wrap gap-1">

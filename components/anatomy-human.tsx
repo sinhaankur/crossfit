@@ -2,7 +2,7 @@
 
 import { Suspense, useMemo, useRef } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
-import { OrbitControls, useGLTF } from "@react-three/drei";
+import { ContactShadows, OrbitControls, useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 import type { Pattern } from "@/lib/movements";
 import { musclesFor, type MuscleId } from "@/lib/anatomy";
@@ -16,25 +16,35 @@ import { musclesFor, type MuscleId } from "@/lib/anatomy";
 
 const MODEL = "/anatomy-muscles.glb";
 
-const BASE = new THREE.Color("#b04a4a");     // resting muscle — visible, fleshy
-const PRIMARY = new THREE.Color("#ff2d55");  // worked hard (bright)
-const SECONDARY = new THREE.Color("#d84a63");// assists (mid)
-const EMIS_P = new THREE.Color("#ff2d55");
-const EMIS_S = new THREE.Color("#8a2333");
+// Muscle colors stay ANATOMICAL (flesh is red — that's the truth of the
+// tissue) and the worked signal stays hot: fire reads against the cool blue
+// room. Base lifted a touch so resting muscle is legible, not liver-dark.
+const BASE = new THREE.Color("#c25c56");     // resting muscle — visible, fleshy
+const PRIMARY = new THREE.Color("#ff3b5c");  // worked hard (bright)
+const SECONDARY = new THREE.Color("#e0596e");// assists (mid)
+const EMIS_P = new THREE.Color("#ff3b5c");
+const EMIS_S = new THREE.Color("#93283a");
 
 export function AnatomyHuman({ pattern }: { pattern: Pattern }) {
   const { primary, secondary } = musclesFor(pattern);
   return (
-    <div className="relative h-full w-full overflow-hidden rounded-2xl bg-gradient-to-b from-[#241318] to-[#0c0709]">
+    <div className="relative h-full w-full overflow-hidden rounded-2xl bg-gradient-to-b from-[#0d1526] to-[#070b14]">
       {/* The model is ~1.53 m tall, feet at y=0, centered on x/z. We look at its
-          mid-height (~0.8 m) from far enough to see the whole body. */}
-      <Canvas camera={{ position: [0, 0.85, 3.0], fov: 45 }} dpr={[1, 2]}>
-        <hemisphereLight args={["#ffffff", "#3a2025", 1.1]} />
-        <directionalLight position={[3, 5, 4]} intensity={1.6} />
-        <directionalLight position={[-3, 2, -2]} intensity={0.7} color="#ff8a9a" />
-        <directionalLight position={[0, 2, -4]} intensity={0.5} color="#ffffff" />
+          mid-height (~0.8 m) from far enough to see the whole body.
+          LIGHTING: cool navy studio — the old rig was red-on-red (warm ground
+          bounce + red rim + red backdrop) and the body read as a muddy blob.
+          Flesh stays warm; the ROOM is blue: bright neutral key, sky-blue rim
+          from behind for sculptural edge separation, navy ground bounce, and a
+          contact shadow so the figure stands on something. */}
+      <Canvas camera={{ position: [0, 0.85, 3.0], fov: 45 }} dpr={[1, 2]}
+        gl={{ toneMappingExposure: 1.2 }}>
+        <hemisphereLight args={["#eaf2ff", "#16233c", 1.15]} />
+        <directionalLight position={[3, 5, 4]} intensity={2.2} color="#fff4ea" />
+        <directionalLight position={[-4, 2.5, -3]} intensity={1.1} color="#7cc0ff" />
+        <directionalLight position={[0, 1.5, -4]} intensity={0.6} color="#9fd2ff" />
         <Suspense fallback={null}>
           <Body primary={primary} secondary={secondary} />
+          <ContactShadows position={[0, 0.01, 0]} opacity={0.45} scale={4} blur={2.6} far={2} color="#020409" />
         </Suspense>
         <OrbitControls
           enablePan={false} target={[0, 0.8, 0]}

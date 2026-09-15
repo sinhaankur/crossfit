@@ -411,6 +411,124 @@ for aname, fr, joints in VERIFY:
     except Exception as e:
         print(f"[verify] render skipped: {e}")
 
+# ---------------------------------------------------------------- equipment
+# Render the GEAR too, so each movement READS at a glance ("build or render
+# equipments too so that it is clear"): a loaded barbell for squat/deadlift/
+# press, a pull-up bar for pull-up, a mat for the plank, the ground for
+# walk/run/idle. Static meshes parented into the rig — the hand-held bars ride
+# the hand bones (follow the rep), the floor/bar structures stay in the world.
+#
+# BUILT PER MOVEMENT at export time (each GLB carries only its own gear), and
+# skinned/parented so the exporter includes them with use_selection.
+
+STEEL = mat("steel", (0.62, 0.66, 0.72, 1.0), rough=0.35)
+PLATE = mat("plate", (0.10, 0.11, 0.14, 1.0), rough=0.6)      # bumper plates
+BAR_ACCENT = mat("bar_accent", ACCENT, rough=0.4)            # blue collars/grip
+MAT_BLUE = mat("mat", (0.16, 0.32, 0.52, 1.0), rough=0.9)     # exercise mat
+FLOOR = mat("floor", (0.09, 0.12, 0.18, 1.0), rough=0.95)     # platform
+
+def cylinder(name, r, depth, loc, axis="X", m=STEEL, verts=20):
+    bpy.ops.mesh.primitive_cylinder_add(radius=r, depth=depth, location=loc, vertices=verts)
+    ob = bpy.context.active_object
+    ob.name = name
+    if axis == "X":
+        ob.rotation_euler = (0, math.radians(90), 0)
+    elif axis == "Y":
+        ob.rotation_euler = (math.radians(90), 0, 0)
+    bpy.ops.object.transform_apply(rotation=True)
+    ob.data.materials.append(m)
+    bpy.ops.object.shade_smooth()
+    return ob
+
+def cube(name, sx, sy, sz, loc, m=STEEL):
+    bpy.ops.mesh.primitive_cube_add(size=1.0, location=loc)
+    ob = bpy.context.active_object
+    ob.name = name
+    ob.scale = (sx, sy, sz)
+    bpy.ops.object.transform_apply(scale=True)
+    ob.data.materials.append(m)
+    return ob
+
+def join_as(name, objs):
+    for o in bpy.context.selected_objects:
+        o.select_set(False)
+    for o in objs:
+        o.select_set(True)
+    bpy.context.view_layer.objects.active = objs[0]
+    bpy.ops.object.join()
+    g = bpy.context.active_object
+    g.name = name
+    g.select_set(False)
+    return g
+
+def make_barbell(name, grip_z, grip_y, bar_len=1.9):
+    """Olympic bar + bumper plates, centered on the grip point."""
+    parts = [cylinder(f"{name}_shaft", 0.014, bar_len, (0, grip_y, grip_z), "X", STEEL, 24)]
+    # grip knurl marks (blue) + plates + collars on each side
+    for sx in (1, -1):
+        parts.append(cylinder(f"{name}_grip.{sx}", 0.016, 0.16, (sx * 0.20, grip_y, grip_z), "X", BAR_ACCENT, 16))
+        for pi, (pr, px) in enumerate([(0.225, 0.62), (0.225, 0.68), (0.20, 0.735)]):
+            parts.append(cylinder(f"{name}_plate.{sx}.{pi}", pr, 0.05, (sx * px, grip_y, grip_z), "X", PLATE, 28))
+        parts.append(cylinder(f"{name}_collar.{sx}", 0.05, 0.05, (sx * 0.58, grip_y, grip_z), "X", BAR_ACCENT, 16))
+    return join_as(name, parts)
+
+def parent_to_bone(ob, bone_name):
+    """Rigidly attach a static mesh to a bone (rides that bone's motion). Use the
+    data-API parent (no operator) so it's headless-robust: set the object's
+    parent_type='BONE' + parent_bone, then correct matrix_parent_inverse so the
+    mesh keeps its authored world position at the bone's rest pose."""
+    bpy.ops.object.mode_set(mode="OBJECT")
+    # Bone-parented children hang off the bone's TAIL in Blender; build the
+    # rest-pose world matrix of that tail and invert it into the child.
+    bone = rig.data.bones[bone_name]
+    tail_world = rig.matrix_world @ Matrix.Translation(bone.tail_local) @ bone.matrix_local.to_3x3().to_4x4()
+    ob.parent = rig
+    ob.parent_type = "BONE"
+    ob.parent_bone = bone_name
+    ob.matrix_parent_inverse = tail_world.inverted()
+
+def measure_hand(aname, fr):
+    """World position of the L hand at a movement's working keyframe — so a
+    world-static bar can be placed exactly where the hands grip it."""
+    rig.animation_data.action = ACTIONS[aname]
+    scene.frame_set(fr)
+    dgh = bpy.context.evaluated_depsgraph_get()
+    ev = rig.evaluated_get(dgh)
+    return (ev.matrix_world @ ev.pose.bones["hand.L"].matrix).translation.copy()
+
+def build_gear(movement):
+    """Return the list of gear objects for a movement (fresh each export).
+    Bars are WORLD-STATIC at the grip height the hands reach on the working
+    keyframe (bone-parenting made the bar inherit the hand's twist + tail
+    offset — it floated and tilted). The rep's hands meet the fixed bar, which
+    is exactly how a form diagram reads."""
+    if movement == "squat":
+        h = measure_hand("squat", 36)   # front-rack: hands near shoulders
+        hb = make_barbell("bar", grip_z=h.z + 0.02, grip_y=h.y - 0.06)
+        return [(hb, None)]
+    if movement == "press":
+        h = measure_hand("press", 1)    # rack height at the start (hands at shoulders)
+        hb = make_barbell("bar", grip_z=h.z, grip_y=h.y - 0.04)
+        return [(hb, None)]
+    if movement == "deadlift":
+        h = measure_hand("deadlift", 36)  # bottom of the hinge, arms plumb
+        hb = make_barbell("bar", grip_z=max(0.22, h.z), grip_y=h.y - 0.02)
+        return [(hb, None)]
+    if movement == "pullup":
+        # Fixed overhead bar + two uprights — world-static (not hand-parented).
+        bar = cylinder("pu_bar", 0.02, 1.4, (0, 0.0, 2.06), "X", STEEL, 24)
+        u1 = cube("pu_u1", 0.04, 0.04, 2.06, (0.66, 0.0, 1.03), STEEL)
+        u2 = cube("pu_u2", 0.04, 0.04, 2.06, (-0.66, 0.0, 1.03), STEEL)
+        base = cube("pu_base", 1.5, 0.5, 0.04, (0, 0.0, 0.02), FLOOR)
+        return [(join_as("pullup_rig", [bar, u1, u2, base]), None)]
+    if movement == "plank":
+        mat_ob = cube("plank_mat", 0.7, 2.0, 0.02, (0, -0.35, 0.01), MAT_BLUE)
+        return [(mat_ob, None)]
+    if movement in ("walk", "run", "idle"):
+        floor = cube("floor", 2.4, 2.4, 0.03, (0, 0, -0.015), FLOOR)
+        return [(floor, None)]
+    return []
+
 # ---------------------------------------------------------------- export
 import os
 os.makedirs(OUT_DIR, exist_ok=True)
@@ -426,10 +544,24 @@ for fname, aname in FILES.items():
     rig.animation_data.action = ACTIONS[aname]
     scene.frame_start, scene.frame_end = 1, frame_ends[aname]
     scene.frame_set(1)
+    # Build this movement's gear, parent it in, and remember the objects so we
+    # can delete them after export (next movement gets its OWN gear only).
+    gear = build_gear(fname)
+    # build_gear may sample OTHER frames to place a bar; restore this export's
+    # action + start frame before writing the file.
+    rig.animation_data.action = ACTIONS[aname]
+    scene.frame_set(1)
+    gear_objs = []
+    for ob, bone_name in gear:
+        if bone_name:
+            parent_to_bone(ob, bone_name)
+        gear_objs.append(ob)
     for ob in bpy.context.selected_objects:
         ob.select_set(False)
     body.select_set(True)
     rig.select_set(True)
+    for ob in gear_objs:
+        ob.select_set(True)
     kwargs = dict(
         filepath=os.path.join(OUT_DIR, f"{fname}.glb"),
         export_format="GLB",
@@ -450,6 +582,9 @@ for fname, aname in FILES.items():
             if not dropped:
                 raise
             kwargs.pop(dropped)
-    print(f"[export] {fname}.glb  (clip: {aname})")
+    # Remove this movement's gear so the next export starts clean.
+    for ob in gear_objs:
+        bpy.data.objects.remove(ob, do_unlink=True)
+    print(f"[export] {fname}.glb  (clip: {aname}, gear: {len(gear_objs)} obj)")
 
 print("[done] all movement GLBs exported to", OUT_DIR)

@@ -3,13 +3,17 @@
 @tailwind utilities;
 
 :root {
-  --bg: #0b0c10;
-  --card: #16181f;
-  --fg: #f3f4f6;
-  --muted: #9aa0aa;
-  --accent: #f43f5e;   /* CrossFit energy — rose/red */
-  --accent-2: #fb7185; /* lighter rose for gradients */
-  --line: rgba(255,255,255,0.08);
+  /* Shades-of-blue system (Ankur 2026-09-15): deep navy base, electric azure
+     energy, sky highlights. Destructive actions + body-data ramps keep their
+     semantic colors; the worked-muscle signal stays HOT on purpose — fire
+     reads against a cool room. */
+  --bg: #070b14;       /* deep navy-black */
+  --card: #0e1524;     /* navy card */
+  --fg: #f2f6fc;       /* cool white */
+  --muted: #8fa0b8;    /* slate blue-grey */
+  --accent: #3f8cff;   /* electric azure — the energy color */
+  --accent-2: #7cc0ff; /* light sky for gradients */
+  --line: rgba(148,180,255,0.10);
   --font-sans: ui-sans-serif, system-ui, -apple-system, sans-serif;
   --font-display: Georgia, "Times New Roman", serif;
   --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
@@ -50,13 +54,13 @@ body {
 .aurora::before {
   width: 55vw; height: 55vw;
   left: -10vw; top: -18vw;
-  background: radial-gradient(circle, rgba(244,63,94,0.55), transparent 70%);
+  background: radial-gradient(circle, rgba(63,140,255,0.5), transparent 70%);
   animation: drift1 18s ease-in-out infinite alternate;
 }
 .aurora::after {
   width: 48vw; height: 48vw;
   right: -12vw; top: -6vw;
-  background: radial-gradient(circle, rgba(99,102,241,0.4), transparent 70%);
+  background: radial-gradient(circle, rgba(34,211,238,0.32), transparent 70%);
   animation: drift2 22s ease-in-out infinite alternate;
 }
 @keyframes drift1 { to { transform: translate(6vw, 6vw) scale(1.1); } }

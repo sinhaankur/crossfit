@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useRef, useState } from "react";
 import { Canvas } from "@react-three/fiber";
-import { OrbitControls, useGLTF, useAnimations, Environment, ContactShadows } from "@react-three/drei";
+import { OrbitControls, useGLTF, useAnimations, ContactShadows } from "@react-three/drei";
 import * as THREE from "three";
 import type { Pattern } from "@/lib/movements";
 import { FigureStage } from "./figure-stage";
@@ -72,16 +72,22 @@ export function Human3D({ pattern }: { pattern: Pattern }) {
   }
 
   return (
-    <div className="relative aspect-[4/5] w-full overflow-hidden rounded-2xl bg-gradient-to-b from-white/[0.06] to-black/20">
-      <Canvas camera={{ position: [0, 1.1, 3.2], fov: 40 }} dpr={[1, 2]} shadows>
-        <ambientLight intensity={0.6} />
-        <directionalLight position={[3, 5, 2]} intensity={1.1} castShadow />
+    <div className="relative h-full min-h-[24rem] w-full overflow-hidden rounded-2xl bg-gradient-to-b from-[#0d1526] to-[#070b14]">
+      {/* Cool navy studio, matching the anatomy view: neutral key + sky-blue
+          rim so the figure + equipment read sculptural against the dark. */}
+      <Canvas camera={{ position: [0, 0.2, 4.4], fov: 42 }} dpr={[1, 2]} shadows
+        gl={{ toneMappingExposure: 1.15 }}>
+        <hemisphereLight args={["#eaf2ff", "#16233c", 1.0]} />
+        <directionalLight position={[3, 5, 4]} intensity={2.0} color="#fff4ea" castShadow />
+        <directionalLight position={[-4, 2.5, -3]} intensity={1.0} color="#7cc0ff" />
         <Suspense fallback={null}>
           <Model path={modelPath} />
-          <Environment preset="studio" />
-          <ContactShadows position={[0, -1, 0]} opacity={0.4} scale={6} blur={2.4} far={3} />
+          <ContactShadows position={[0, -1, 0]} opacity={0.4} scale={6} blur={2.4} far={3} color="#020409" />
         </Suspense>
-        <OrbitControls enablePan={false} minDistance={2} maxDistance={5} minPolarAngle={0.3} maxPolarAngle={Math.PI / 1.8} />
+        {/* Look at the figure's mid-height (feet at y=-1, head ~y=+0.75 → center
+            ~-0.15) so the whole body + its gear sits centered, not sunk low. */}
+        <OrbitControls enablePan={false} target={[0, -0.15, 0]} minDistance={2.8} maxDistance={6.5}
+          autoRotate autoRotateSpeed={0.5} minPolarAngle={0.35} maxPolarAngle={Math.PI / 1.85} />
       </Canvas>
       <div className="pointer-events-none absolute bottom-2 left-0 right-0 text-center text-[10px] font-medium uppercase tracking-widest text-white/40">
         drag to orbit · scroll to zoom
@@ -100,7 +106,7 @@ function Model({ path }: { path: string }) {
   const { actions, names } = useAnimations(animations, group);
 
   useEffect(() => {
-    // Play whatever clip the file carries (Mixamo exports one clip per file).
+    // Play whatever clip the file carries (one clip per movement file).
     const name = names[0];
     if (!name || !actions[name]) return;
     const action = actions[name];
@@ -109,6 +115,8 @@ function Model({ path }: { path: string }) {
     return () => { action.fadeOut(0.2); };
   }, [actions, names]);
 
+  // Feet at y=0 in the GLB; drop the group so the figure stands centered in view
+  // (the equipment — floor/box/pull-up base — sits at the same ground plane).
   return <primitive ref={group} object={scene} scale={1} position={[0, -1, 0]} />;
 }
 

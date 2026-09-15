@@ -24,7 +24,7 @@ export default function AppTeaser() {
       <div className="mx-auto max-w-3xl px-5 py-12">
         <p className="font-mono-eyebrow text-[var(--muted)]">Kelo · on every screen</p>
         <div className="mt-4 flex items-center gap-3">
-          <span className="grid h-14 w-14 place-items-center rounded-2xl bg-gradient-to-br from-[var(--accent-2)] to-[var(--accent)] text-2xl font-black text-white shadow-lg shadow-rose-500/30">K</span>
+          <span className="grid h-14 w-14 place-items-center rounded-2xl bg-gradient-to-br from-[var(--accent-2)] to-[var(--accent)] text-2xl font-black text-white shadow-lg shadow-sky-500/30">K</span>
           <h1 className="text-4xl font-bold sm:text-5xl">Get Kelo</h1>
         </div>
         <p className="mt-4 max-w-xl text-lg text-[var(--fg)]/80 leading-relaxed">
@@ -34,7 +34,7 @@ export default function AppTeaser() {
 
         {/* install now (PWA) + native soon */}
         <div className="mt-6 flex flex-wrap gap-3">
-          <a href="/today" className="rounded-full bg-[var(--accent)] px-6 py-3 text-sm font-bold text-white shadow-lg shadow-rose-500/20 transition hover:brightness-110">
+          <a href="/today" className="rounded-full bg-[var(--accent)] px-6 py-3 text-sm font-bold text-white shadow-lg shadow-sky-500/20 transition hover:brightness-110">
             Use Kelo now — free
           </a>
           <span className="inline-flex items-center gap-2 rounded-full border border-[var(--line)] bg-[var(--card)] px-4 py-3 text-sm">
