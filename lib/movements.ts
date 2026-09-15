@@ -661,3 +661,23 @@ export const MOVEMENTS: Movement[] = [
 export const MOVEMENT_BY_ID: Record<string, Movement> = Object.fromEntries(
   MOVEMENTS.map((m) => [m.id, m]),
 );
+
+// PATTERN-LEVEL adaptive defaults — so ALL movements get seated/supported
+// coverage, not just the 8 we hand-authored. A seated squat is a seated squat
+// whether the exercise is an Air Squat or a Box Step-Up; the adaptive variant
+// belongs to the movement PATTERN. We take the first authored `adaptive` we
+// find per pattern as that pattern's default. A specific movement can still
+// override with its own `adaptive`. This is what makes "exercise for all" cover
+// the whole library from 8 authored sources (deterministic, no duplication).
+export const PATTERN_ADAPTIVE: Partial<Record<Pattern, AdaptiveVariant[]>> = (() => {
+  const out: Partial<Record<Pattern, AdaptiveVariant[]>> = {};
+  for (const m of MOVEMENTS) {
+    if (m.adaptive && m.adaptive.length && !out[m.pattern]) out[m.pattern] = m.adaptive;
+  }
+  return out;
+})();
+
+/** A movement's adaptive variants: its own if authored, else the pattern default. */
+export function adaptiveFor(m: Movement): AdaptiveVariant[] {
+  return m.adaptive && m.adaptive.length ? m.adaptive : (PATTERN_ADAPTIVE[m.pattern] ?? []);
+}

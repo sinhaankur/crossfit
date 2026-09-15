@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
-import type { Movement } from "@/lib/movements";
+import { adaptiveFor, type Movement } from "@/lib/movements";
 import { ChevronLeft, ChevronRight, ShieldAlert, Check, Sparkles, Dumbbell, Activity, PersonStanding, Accessibility, Volume2, VolumeX, Users } from "lucide-react";
 import { award, loadGame, levelFor } from "@/lib/game";
 import { MuscleMap } from "./muscle-map";
@@ -61,10 +61,13 @@ export function CloserLook({ movements }: { movements: Movement[] }) {
   const muscles = musclesFor(m.pattern);
   const lvl = levelFor(xp);
 
+  // Adaptive variants for this movement — its own if authored, else the pattern
+  // default (so all 46 movements get seated/supported, not just the 8 authored).
+  const adaptive = adaptiveFor(m);
   // The ACTIVE cues — standard movement, or the selected adaptive variant. Every
   // step/safety read below uses these so switching to "Seated" reflows the whole
   // trainer to the adapted version.
-  const av = variant >= 0 ? m.adaptive?.[variant] : undefined;
+  const av = variant >= 0 ? adaptive[variant] : undefined;
   const activeSteps = av ? av.steps : m.steps;
   const activeSafety = av ? av.safety : m.safety;
 
@@ -117,11 +120,12 @@ export function CloserLook({ movements }: { movements: Movement[] }) {
 
   return (
     <section className="mx-auto flex h-[calc(100dvh-56px)] max-w-6xl flex-col px-4 pb-3 pt-3 sm:px-6">
-      {/* top bar: title + XP */}
+      {/* top bar: title + XP — editorial header in sinhaankur's voice: a mono
+          uppercase eyebrow over a Fraunces display line. */}
       <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <Dumbbell className="h-5 w-5 text-[var(--accent)]" />
-          <h1 className="text-lg font-bold sm:text-xl">Learn the movement</h1>
+        <div>
+          <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-[var(--muted)]">Train · Movement</p>
+          <h1 className="font-display text-2xl font-light tracking-[-0.01em] text-[var(--fg)] sm:text-3xl">Learn the movement</h1>
         </div>
         <div className="flex items-center gap-2">
           {/* Voice coaching toggle — reads each step aloud, on-device. Hands-free
@@ -268,8 +272,8 @@ export function CloserLook({ movements }: { movements: Movement[] }) {
           <div className="mt-1.5 space-y-1 text-[12px]">
             <p className="text-[var(--fg)]/90">{ageProfile.reps}</p>
             <p className="text-[var(--fg)]/70"><span className="text-[var(--muted)]">Watch:</span> {ageProfile.emphasis}</p>
-            {suggestsAdaptive(age) && m.adaptive && m.adaptive.length > 0 && variant === -1 && (
-              <p className="text-[var(--accent)]">Tip: try the {m.adaptive[0].label} version below for extra safety.</p>
+            {suggestsAdaptive(age) && adaptive.length > 0 && variant === -1 && (
+              <p className="text-[var(--accent)]">Tip: try the {adaptive[0].label} version below for extra safety.</p>
             )}
           </div>
         </details>
@@ -289,14 +293,14 @@ export function CloserLook({ movements }: { movements: Movement[] }) {
           {/* ADAPTIVE variant selector — "exercise for all". Standard + a seated /
               chair-supported way to train the same pattern. Only shown when the
               movement has variants. The forWhom line reassures it's for you. */}
-          {m.adaptive && m.adaptive.length > 0 && (
+          {adaptive.length > 0 && (
             <div className="mb-2 flex flex-col items-center gap-1">
               <div className="flex items-center gap-1">
                 <button onClick={() => chooseVariant(-1)}
                   className={`flex items-center gap-1 rounded-full px-3 py-1 text-[11px] font-semibold transition ${variant === -1 ? "bg-[var(--fg)] text-[var(--bg)]" : "bg-white/10 text-[var(--muted)] hover:text-white"}`}>
                   <Accessibility className="h-3.5 w-3.5" /> Standard
                 </button>
-                {m.adaptive.map((v, i) => (
+                {adaptive.map((v, i) => (
                   <button key={v.kind + i} onClick={() => chooseVariant(i)}
                     className={`rounded-full px-3 py-1 text-[11px] font-semibold transition ${variant === i ? "bg-[var(--accent)] text-white" : "bg-white/10 text-[var(--muted)] hover:text-white"}`}>
                     {v.label}
