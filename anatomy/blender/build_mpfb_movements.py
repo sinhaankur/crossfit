@@ -292,6 +292,108 @@ for fr, br in ((1, 0.0), (48, 1.0), (96, 0.0)):
              shoulder=(br * 2, br * 2), elbow=(6 + br * 2, 6 + br * 2))
 ACTIONS["idle"] = a
 
+# ── SEATED variants (exercise for all) ────────────────────────────────────────
+# A real seated figure on a chair, then the seated rep for each pattern. Built
+# with IK: pin the feet flat on the floor, drop + flex the hips to sitting so
+# the thighs go horizontal and the shins stay vertical (knees ~90°). Chair seat
+# height ≈ 0.46 m, so the hips (rest 0.96) drop ~0.50 to sit. Bake IK→FK.
+SEAT_Z = 0.46                       # chair seat height (m)
+SEAT_DROP = HIP_Z - SEAT_Z          # how far the hips sink to sit (~0.50)
+
+def seated_hold(frame, torso_lean=4, arm_sh=8, arm_el=12, neck=0.0,
+                back=0.02, drop=SEAT_DROP):
+    """One seated keyframe: hips dropped to the seat + flexed so thighs are
+    horizontal; IK keeps the feet planted → knees bend to ~90°. Arms/torso on
+    top. `drop`/`back` let a sit-to-stand rep rise out of the chair."""
+    # Hips flex forward a lot to sit (thigh horizontal) minus the upright lean.
+    key(BN("hips"), frame, rx=flex("hips", 82 + torso_lean),
+        loc=hips_offset(-back, -drop))
+    key(BN("spine"), frame, rx=flex("hips", -40 + torso_lean * 0.5))   # counter so torso stays upright
+    key(BN("chest"), frame, rx=flex("hips", -34 + torso_lean * 0.3))
+    key(BN("neck"), frame, rx=flex("hips", neck))
+    for s in ("L", "R"):
+        key(BN("upperarm", s), frame, rx=flex("upperarm", arm_sh))
+        key(BN("forearm", s), frame, rx=flex("forearm", arm_el))
+
+def make_seated(name, last, frames, seed_thigh=-82):
+    """Build a seated action: seed the legs bent, pin feet with IK at the seated
+    stance, run `frames` (list of dicts for seated_hold), bake."""
+    a = new_action(name, last)
+    reset_pose()
+    # Seed: thighs forward-horizontal + knees bent so IK targets land at a
+    # natural seated foot position (feet ahead of the hips, flat on floor).
+    for s in ("L", "R"):
+        pb[BN("thigh", s)].rotation_euler = (flex("thigh", 82), 0, 0)
+        pb[BN("shin", s)].rotation_euler = (flex("shin", -85), 0, 0)
+    tgts = setup_leg_ik()
+    # Move the pinned feet to a flat seated stance: forward of the hips, on floor.
+    for s, t in tgts.items():
+        t.location.z = 0.05
+        t.location.y = -0.34   # feet ahead (−Y is forward here)
+    for fr in frames:
+        seated_hold(fr.get("frame"), **{k: v for k, v in fr.items() if k != "frame"})
+    bake_ik_to_fk(1, last)
+    ACTIONS[name] = a
+    return a
+
+# seated-squat = sit-to-stand: rise out of the chair and back down.
+make_seated("seated-squat", 72, [
+    {"frame": 1,  "drop": SEAT_DROP, "back": 0.02, "arm_sh": 55, "arm_el": 20, "torso_lean": 10},
+    {"frame": 30, "drop": 0.04,      "back": 0.0,  "arm_sh": 60, "arm_el": 15, "torso_lean": 4},   # stood up
+    {"frame": 72, "drop": SEAT_DROP, "back": 0.02, "arm_sh": 55, "arm_el": 20, "torso_lean": 10},
+])
+
+# seated-deadlift = seated hinge: chest toward knees, back flat, then tall.
+make_seated("seated-deadlift", 72, [
+    {"frame": 1,  "torso_lean": 4,  "arm_sh": 0, "arm_el": 5, "neck": -6},
+    {"frame": 36, "torso_lean": 34, "arm_sh": 0, "arm_el": 0, "neck": -10},   # hinge forward
+    {"frame": 72, "torso_lean": 4,  "arm_sh": 0, "arm_el": 5, "neck": -6},
+])
+
+# seated-press = seated press-out / overhead-ish: arms drive up and forward.
+make_seated("seated-press", 64, [
+    {"frame": 1,  "arm_sh": 25, "arm_el": 130},
+    {"frame": 32, "arm_sh": 150, "arm_el": 10, "torso_lean": 0},   # pressed up
+    {"frame": 64, "arm_sh": 25, "arm_el": 130},
+])
+
+# seated-row = seated band row: elbows drive back, squeeze the back.
+make_seated("seated-row", 64, [
+    {"frame": 1,  "arm_sh": 55, "arm_el": 5},
+    {"frame": 32, "arm_sh": 8,  "arm_el": 95, "torso_lean": 6},   # pulled in
+    {"frame": 64, "arm_sh": 55, "arm_el": 5},
+])
+
+# seated-core = seated brace + slow knee lift (subtle, safe).
+make_seated("seated-core", 72, [
+    {"frame": 1,  "torso_lean": 4, "arm_sh": 10, "arm_el": 90},
+    {"frame": 36, "torso_lean": 6, "arm_sh": 10, "arm_el": 90},
+    {"frame": 72, "torso_lean": 4, "arm_sh": 10, "arm_el": 90},
+])
+
+# seated-cardio = seated arm pumps (heart-rate up, seated).
+make_seated("seated-cardio", 40, [
+    {"frame": 1,  "arm_sh": 150, "arm_el": 20},
+    {"frame": 10, "arm_sh": 20,  "arm_el": 20},
+    {"frame": 20, "arm_sh": 150, "arm_el": 20},
+    {"frame": 30, "arm_sh": 20,  "arm_el": 20},
+    {"frame": 40, "arm_sh": 150, "arm_el": 20},
+])
+
+# seated-catcow = seated spine mobility: gentle arch ↔ round.
+make_seated("seated-catcow", 96, [
+    {"frame": 1,  "torso_lean": -8, "neck": -12, "arm_sh": 6, "arm_el": 30},   # cow (arch, look up)
+    {"frame": 48, "torso_lean": 18, "neck": 14,  "arm_sh": 6, "arm_el": 30},   # cat (round, chin down)
+    {"frame": 96, "torso_lean": -8, "neck": -12, "arm_sh": 6, "arm_el": 30},
+])
+
+# seated-carry = seated hold: weights at the sides, braced.
+make_seated("seated-carry", 72, [
+    {"frame": 1,  "torso_lean": 3, "arm_sh": 4, "arm_el": 6},
+    {"frame": 36, "torso_lean": 4, "arm_sh": 4, "arm_el": 6},
+    {"frame": 72, "torso_lean": 3, "arm_sh": 4, "arm_el": 6},
+])
+
 bpy.ops.object.mode_set(mode="OBJECT")
 
 # ── equipment (world-static bars at the hand grip; reused from human_rig_build)─
@@ -343,7 +445,19 @@ def measure_hand(aname, fr):
     d = bpy.context.evaluated_depsgraph_get(); ev = rig.evaluated_get(d)
     return (ev.matrix_world @ ev.pose.bones["wrist.L"].matrix).translation.copy()
 
+def make_chair():
+    """A simple sturdy chair: seat at SEAT_Z, four legs, a low back. The seated
+    figure rests on this so the pose reads unmistakably as 'seated'."""
+    WOOD = mat("chair", (0.30, 0.34, 0.42, 1.0), 0.7)
+    parts = [cube("seat", 0.42, 0.42, 0.04, (0, -0.30, SEAT_Z), WOOD)]
+    for lx, ly in ((0.18, -0.10), (-0.18, -0.10), (0.18, -0.50), (-0.18, -0.50)):
+        parts.append(cube(f"leg_{lx}_{ly}", 0.04, 0.04, SEAT_Z, (lx, ly, SEAT_Z / 2), WOOD))
+    parts.append(cube("back", 0.42, 0.04, 0.42, (0, -0.10, SEAT_Z + 0.23), WOOD))
+    return join_as("chair", parts)
+
 def build_gear(mv):
+    if mv.startswith("seated-"):
+        return [make_chair()]
     if mv == "squat":
         h = measure_hand("squat", 36); return [barbell("bar", h.z+0.02, h.y-0.06)]
     if mv == "press":
@@ -364,8 +478,13 @@ def build_gear(mv):
 
 # ── export one GLB per movement ───────────────────────────────────────────────
 frame_ends = {"squat": 72, "deadlift": 72, "press": 64, "pullup": 64,
-              "plank": 72, "walk": 48, "run": 32, "idle": 96}
-for mv in ["squat", "deadlift", "press", "pullup", "plank", "walk", "run", "idle"]:
+              "plank": 72, "walk": 48, "run": 32, "idle": 96,
+              "seated-squat": 72, "seated-deadlift": 72, "seated-press": 64,
+              "seated-row": 64, "seated-core": 72, "seated-cardio": 40,
+              "seated-catcow": 96, "seated-carry": 72}
+for mv in ["squat", "deadlift", "press", "pullup", "plank", "walk", "run", "idle",
+           "seated-squat", "seated-deadlift", "seated-press", "seated-row",
+           "seated-core", "seated-cardio", "seated-catcow", "seated-carry"]:
     rig.animation_data.action = ACTIONS[mv]
     scene.frame_start, scene.frame_end = 1, frame_ends[mv]
     scene.frame_set(1)

@@ -40,15 +40,29 @@ const MODEL_FOR: Record<Pattern, string> = {
   mobility: "/models/idle.glb",
 };
 
+// SEATED variant models — the real figure doing the rep on a chair, one per
+// pattern (build_mpfb_movements.py). Shown when a seated adaptive variant is
+// picked, so the 3D human actually SITS instead of standing under seated cues.
+const SEATED_MODEL_FOR: Record<Pattern, string> = {
+  squat: "/models/seated-squat.glb",
+  hinge: "/models/seated-deadlift.glb",
+  push: "/models/seated-press.glb",
+  pull: "/models/seated-row.glb",
+  core: "/models/seated-core.glb",
+  carry: "/models/seated-carry.glb",
+  cardio: "/models/seated-cardio.glb",
+  mobility: "/models/seated-catcow.glb",
+};
+
 export const MODEL_CREDIT: { author: string; url: string; license: string } = {
   author: "MakeHuman / MPFB",
   url: "https://www.makehumancommunity.org",
   license: "Human base: MakeHuman/MPFB2 (CC0) · rig, clips & equipment © Ankur Sinha",
 };
 
-export function Human3D({ pattern }: { pattern: Pattern }) {
+export function Human3D({ pattern, seated = false }: { pattern: Pattern; seated?: boolean }) {
   const [ok, setOk] = useState<boolean | null>(null); // null=checking, true=model exists, false=fallback
-  const modelPath = MODEL_FOR[pattern];
+  const modelPath = seated ? SEATED_MODEL_FOR[pattern] : MODEL_FOR[pattern];
 
   // Probe for the model + WebGL before committing to a Canvas (avoids a hard crash
   // when the .glb hasn't been added yet). Re-checks when the movement changes.

@@ -151,7 +151,7 @@ export function CloserLook({ movements }: { movements: Movement[] }) {
             ? <div className="grid h-full place-items-center overflow-auto p-4"><div className="w-full max-w-md"><MuscleMap pattern={m.pattern} /></div></div>
             : view === "anatomy"
               ? <AnatomyHuman pattern={m.pattern} />
-              : <Human3D pattern={m.pattern} />}
+              : <Human3D pattern={m.pattern} seated={av?.kind === "seated"} />}
         </div>
 
         {/* view switch: Action (rep + gear) · Muscles · Map — a 3-segment pill */}
