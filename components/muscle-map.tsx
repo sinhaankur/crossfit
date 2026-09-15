@@ -1,7 +1,7 @@
 "use client";
 
 import type { Pattern } from "@/lib/movements";
-import { musclesFor, MUSCLE_LABEL, type MuscleId } from "@/lib/anatomy";
+import { musclesFor, MUSCLE_LABEL, MUSCLE_PLAIN, type MuscleId } from "@/lib/anatomy";
 
 // MuscleMap — front + back anatomical body with the WORKED muscles highlighted for
 // a movement (primary bright, secondary dim). This is the "see which muscle is
@@ -12,7 +12,8 @@ export function MuscleMap({ pattern }: { pattern: Pattern }) {
   const { primary, secondary } = musclesFor(pattern);
   const state = (id: MuscleId): "p" | "s" | "off" =>
     primary.includes(id) ? "p" : secondary.includes(id) ? "s" : "off";
-  const fill = (id: MuscleId) => (state(id) === "p" ? "#f43f5e" : state(id) === "s" ? "rgba(244,63,94,0.4)" : "rgba(255,255,255,0.08)");
+  // Worked muscles glow in the accent (blue theme); resting muscle stays faint.
+  const fill = (id: MuscleId) => (state(id) === "p" ? "#3f8cff" : state(id) === "s" ? "rgba(63,140,255,0.4)" : "rgba(255,255,255,0.08)");
 
   return (
     <div>
@@ -20,10 +21,19 @@ export function MuscleMap({ pattern }: { pattern: Pattern }) {
         <BodyFront fill={fill} />
         <BodyBack fill={fill} />
       </div>
-      {/* legend of worked muscles */}
+      {/* legend of worked muscles — everyday name first (with the proper name
+          in small type after it), so you learn where it is before the jargon. */}
       <div className="mt-2 flex flex-wrap gap-1">
-        {primary.map((m) => <span key={m} className="rounded-full bg-[var(--accent)]/25 px-2 py-0.5 text-[10px] font-semibold text-[var(--accent)]">{MUSCLE_LABEL[m]}</span>)}
-        {secondary.map((m) => <span key={m} className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] text-[var(--muted)]">{MUSCLE_LABEL[m]}</span>)}
+        {primary.map((m) => (
+          <span key={m} className="rounded-full bg-[var(--accent)]/25 px-2 py-0.5 text-[10px] font-semibold text-[var(--accent)]">
+            {MUSCLE_PLAIN[m]} <span className="font-normal opacity-60">· {MUSCLE_LABEL[m]}</span>
+          </span>
+        ))}
+        {secondary.map((m) => (
+          <span key={m} className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] text-[var(--muted)]">
+            {MUSCLE_PLAIN[m]}
+          </span>
+        ))}
       </div>
       {/* anatomy attribution — muscle naming follows Terminologia Anatomica; the 3D
           anatomy layer derives from Z-Anatomy (CC-BY-SA 4.0). */}

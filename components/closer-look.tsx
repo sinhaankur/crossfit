@@ -6,6 +6,7 @@ import type { Movement } from "@/lib/movements";
 import { ChevronLeft, ChevronRight, ShieldAlert, Check, Sparkles, Dumbbell, Activity, PersonStanding } from "lucide-react";
 import { award, loadGame, levelFor } from "@/lib/game";
 import { MuscleMap } from "./muscle-map";
+import { musclesFor, MUSCLE_PLAIN, MUSCLE_LABEL, MUSCLE_DOES, type MuscleId } from "@/lib/anatomy";
 
 // CloserLook — a SINGLE-SCREEN, gamified movement trainer. No long scroll: the 3D
 // human fills the stage, form steps advance in a compact control, muscles show in
@@ -35,8 +36,13 @@ export function CloserLook({ movements }: { movements: Movement[] }) {
   // Three views: the rigged figure doing the rep with gear (default — clearest
   // "how"), the anatomical muscle body (what's worked), the flat 2D map.
   const [view, setView] = useState<"action" | "anatomy" | "map">("action");
+  // Which muscle chip is expanded (plain name → proper name + what it does).
+  const [openMuscle, setOpenMuscle] = useState<MuscleId | null>(null);
   const seen = useRef<Set<number>>(new Set([0]));
   const m = movements[mi];
+  // Canonical worked-muscles for this movement (drives the plain-language chips
+  // + the tap-to-learn card; same source as the glowing 3D muscle + the map).
+  const muscles = musclesFor(m.pattern);
   const lvl = levelFor(xp);
 
   useEffect(() => { setXp(loadGame().xp); }, []);
@@ -51,7 +57,7 @@ export function CloserLook({ movements }: { movements: Movement[] }) {
       if (s.xp !== xp) { setXp(s.xp); setJustMastered(true); setTimeout(() => setJustMastered(false), 1800); }
     }
   }
-  function chooseMovement(i: number) { setMi(i); setStep(0); seen.current = new Set([0]); }
+  function chooseMovement(i: number) { setMi(i); setStep(0); seen.current = new Set([0]); setOpenMuscle(null); }
 
   return (
     <section className="mx-auto flex h-[calc(100dvh-56px)] max-w-6xl flex-col px-4 pb-3 pt-3 sm:px-6">
@@ -106,14 +112,37 @@ export function CloserLook({ movements }: { movements: Movement[] }) {
           ))}
         </div>
 
-        {/* quick muscle chips (over the figure views, not the flat map) */}
+        {/* quick muscle chips (over the figure views, not the flat map) —
+            PLAIN-LANGUAGE + tap to learn. Beginners don't know muscle names
+            ("erector spinae"?), so each chip shows the everyday body-part name
+            and, on tap, reveals the proper name + what it does + where it is.
+            Driven by the pattern's canonical muscles so the label, the glowing
+            3D muscle, and the map all agree. */}
         {view !== "map" && (
-          <div className="absolute left-3 top-3 max-w-[46%] rounded-2xl bg-black/45 p-3 backdrop-blur-sm">
-            <p className="text-[10px] font-bold uppercase tracking-wide text-[var(--muted)]">Muscles worked</p>
+          <div className="absolute left-3 top-3 max-w-[52%] rounded-2xl bg-black/45 p-3 backdrop-blur-sm">
+            <p className="text-[10px] font-bold uppercase tracking-wide text-[var(--muted)]">Muscles worked · tap to learn</p>
             <div className="mt-1.5 flex flex-wrap gap-1">
-              {m.primary.map((mu) => <span key={mu} className="rounded-full bg-[var(--accent)]/25 px-2 py-0.5 text-[11px] font-semibold text-[var(--accent)]">{mu}</span>)}
-              {m.secondary.slice(0, 3).map((mu) => <span key={mu} className="rounded-full bg-white/10 px-2 py-0.5 text-[11px] text-[var(--muted)]">{mu}</span>)}
+              {muscles.primary.map((id) => (
+                <button key={id} onClick={() => setOpenMuscle(openMuscle === id ? null : id)}
+                  className={`rounded-full px-2 py-0.5 text-[11px] font-semibold transition ${openMuscle === id ? "bg-[var(--accent)] text-white" : "bg-[var(--accent)]/25 text-[var(--accent)] hover:bg-[var(--accent)]/40"}`}>
+                  {MUSCLE_PLAIN[id]}
+                </button>
+              ))}
+              {muscles.secondary.slice(0, 4).map((id) => (
+                <button key={id} onClick={() => setOpenMuscle(openMuscle === id ? null : id)}
+                  className={`rounded-full px-2 py-0.5 text-[11px] transition ${openMuscle === id ? "bg-white/25 text-white" : "bg-white/10 text-[var(--muted)] hover:bg-white/20 hover:text-white"}`}>
+                  {MUSCLE_PLAIN[id]}
+                </button>
+              ))}
             </div>
+            {openMuscle && (
+              <div className="mt-2 border-t border-white/10 pt-2">
+                <p className="text-[12px] font-bold text-[var(--fg)]">{MUSCLE_PLAIN[openMuscle]}
+                  <span className="ml-1.5 text-[10px] font-normal text-[var(--muted)]">{MUSCLE_LABEL[openMuscle]}</span>
+                </p>
+                <p className="mt-0.5 text-[11px] leading-snug text-[var(--fg)]/80">{MUSCLE_DOES[openMuscle]}</p>
+              </div>
+            )}
           </div>
         )}
 

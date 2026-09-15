@@ -23,6 +23,39 @@ export const MUSCLE_LABEL: Record<MuscleId, string> = {
   calves: "Calves", "rotator-cuff": "Rotator cuff", "hip-flexors": "Hip flexors",
 };
 
+// EVERYDAY name — where it is on YOUR body, in words anyone knows. The gym name
+// is hard to remember ("erector spinae"?); this is the label a beginner reads
+// first, with the proper name kept as the secondary. Fixes "I don't remember
+// the names of muscles — it's hard": learn by body-part + what it does.
+export const MUSCLE_PLAIN: Record<MuscleId, string> = {
+  chest: "Chest", "front-delt": "Front of shoulder", "side-delt": "Top of shoulder",
+  "rear-delt": "Back of shoulder", biceps: "Front of upper arm",
+  triceps: "Back of upper arm", forearms: "Forearm / grip",
+  abs: "Front of stomach", obliques: "Sides of waist", quads: "Front of thigh",
+  adductors: "Inner thigh", tibialis: "Front of shin", traps: "Top of back / neck",
+  lats: "Sides of back", rhomboids: "Between shoulder blades",
+  "lower-back": "Lower back", glutes: "Butt", hamstrings: "Back of thigh",
+  calves: "Back of lower leg", "rotator-cuff": "Deep shoulder",
+  "hip-flexors": "Front of hip",
+};
+
+// One plain line on what the muscle DOES — you remember a muscle by its job.
+export const MUSCLE_DOES: Record<MuscleId, string> = {
+  chest: "Pushes things away from you", "front-delt": "Raises your arm forward",
+  "side-delt": "Lifts your arm out to the side", "rear-delt": "Pulls your arm backward",
+  biceps: "Bends your elbow", triceps: "Straightens your elbow",
+  forearms: "Grips and holds", abs: "Curls you forward, braces your core",
+  obliques: "Twists and side-bends you", quads: "Straightens your knee",
+  adductors: "Pulls your legs together", tibialis: "Lifts your foot up",
+  traps: "Shrugs and steadies your shoulders", lats: "Pulls your arms down and in",
+  rhomboids: "Squeezes your shoulder blades together",
+  "lower-back": "Keeps your spine tall and braced", glutes: "Drives your hips forward",
+  hamstrings: "Bends your knee, extends your hip",
+  calves: "Points your toes, drives each step",
+  "rotator-cuff": "Keeps the shoulder joint stable",
+  "hip-flexors": "Lifts your knee toward your chest",
+};
+
 // Which view each muscle is drawn on (front of body vs back).
 export const MUSCLE_VIEW: Record<MuscleId, "front" | "back"> = {
   chest: "front", "front-delt": "front", "side-delt": "front", biceps: "front",
