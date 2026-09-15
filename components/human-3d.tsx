@@ -60,9 +60,17 @@ export const MODEL_CREDIT: { author: string; url: string; license: string } = {
   license: "Human base: MakeHuman/MPFB2 (CC0) · rig, clips & equipment © Ankur Sinha",
 };
 
-export function Human3D({ pattern, seated = false }: { pattern: Pattern; seated?: boolean }) {
+// Chair-supported models — only the squat pattern has a supported variant.
+const SUPPORTED_MODEL_FOR: Partial<Record<Pattern, string>> = {
+  squat: "/models/supported-squat.glb",
+};
+
+export function Human3D({ pattern, variant }: { pattern: Pattern; variant?: "seated" | "supported" }) {
   const [ok, setOk] = useState<boolean | null>(null); // null=checking, true=model exists, false=fallback
-  const modelPath = seated ? SEATED_MODEL_FOR[pattern] : MODEL_FOR[pattern];
+  const modelPath =
+    variant === "seated" ? SEATED_MODEL_FOR[pattern] :
+    variant === "supported" ? (SUPPORTED_MODEL_FOR[pattern] ?? MODEL_FOR[pattern]) :
+    MODEL_FOR[pattern];
 
   // Probe for the model + WebGL before committing to a Canvas (avoids a hard crash
   // when the .glb hasn't been added yet). Re-checks when the movement changes.

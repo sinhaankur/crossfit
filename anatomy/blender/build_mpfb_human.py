@@ -31,13 +31,17 @@ bpy.ops.wm.read_factory_settings(use_empty=True)
 # then override just the sliders we care about: an athletic adult male, lean-
 # muscular, slightly above average height. Leave "race" at its neutral default.
 macro = TargetService.get_default_macro_info_dict()
-macro["gender"] = 0.85      # 0 female … 1 male
+macro["gender"] = 1.0       # fully male (0.85 still read androgynous in render)
 macro["age"] = 0.55         # adult (~25y)
-macro["muscle"] = 0.72      # athletic
-macro["weight"] = 0.45      # lean
-macro["height"] = 0.6       # slightly above average
+macro["muscle"] = 0.82      # clearly athletic/muscular
+macro["weight"] = 0.5       # solid, not skinny
+macro["height"] = 0.62      # slightly above average
 if "proportions" in macro:
     macro["proportions"] = 0.5
+if "cupsize" in macro:
+    macro["cupsize"] = 0.0
+if "firmness" in macro:
+    macro["firmness"] = 1.0
 print("[mpfb] macro keys:", list(macro.keys()))
 basemesh = HumanService.create_human(
     mask_helpers=True,
@@ -68,26 +72,97 @@ except Exception as e:
 # the master "HelperGeometry" group, or they ship as a skirt + a sheet behind
 # the head (exactly what the first render showed).
 import bmesh  # noqa: E402
-hg = basemesh.vertex_groups.get("HelperGeometry")
-if hg:
+# Delete any vert that belongs to ANY helper-* / master-helper / joint-cube
+# group (HelperGeometry misses a few stray helper verts — e.g. the genital
+# helper chip that floated under the figure in the first movement render).
+helper_idx = {vg.index for vg in basemesh.vertex_groups
+              if vg.name == "HelperGeometry" or vg.name == "JointCubes"
+              or vg.name.startswith("helper-") or vg.name.startswith("joint-")}
+if helper_idx:
     bpy.context.view_layer.objects.active = basemesh
     bpy.ops.object.mode_set(mode="EDIT")
     bm = bmesh.from_edit_mesh(basemesh.data)
     dvl = bm.verts.layers.deform.active
     bm.verts.ensure_lookup_table()
-    to_del = [v for v in bm.verts if dvl and hg.index in v[dvl]]
+    to_del = [v for v in bm.verts if dvl and any(gi in v[dvl] for gi in helper_idx)]
     bmesh.ops.delete(bm, geom=to_del, context="VERTS")
     bmesh.update_edit_mesh(basemesh.data)
     bpy.ops.object.mode_set(mode="OBJECT")
     print("[mpfb] stripped %d helper verts → body verts: %d"
           % (len(to_del), len(basemesh.data.vertices)))
 
+# ── 3c. decimate to a web budget ─────────────────────────────────────────────
+# 13k verts × full skinning per frame = ~6.8MB GLBs. The gallery views the
+# figure at fitness-app scale, so halve the mesh with a collapse decimate — the
+# silhouette holds, the file drops ~40%. MPFB carries facial shape keys we never
+# use; a modifier can't apply over shape keys, so clear them first.
+if basemesh.data.shape_keys:
+    basemesh.shape_key_clear()
+    print("[mpfb] cleared shape keys")
+dec = basemesh.modifiers.new("web_decimate", "DECIMATE")
+dec.decimate_type = "COLLAPSE"
+dec.ratio = 0.5
+bpy.context.view_layer.objects.active = basemesh
+bpy.ops.object.modifier_apply(modifier="web_decimate")
+print("[mpfb] decimated → body verts: %d" % len(basemesh.data.vertices))
+
+# NOTE: bone pruning was tried and REVERTED — dissolving intermediate spine/arm
+# bones mid-chain collapsed their skin weights onto distant kept bones, which
+# stretched into spike artifacts under animation (deadlift) and broke the arm
+# rest orientation (pull-up arms splayed sideways). The mesh decimation above is
+# where the file weight actually comes from; the full 163-bone rig stays intact
+# so every chain deforms cleanly. Animation size is trimmed by the exporter's
+# optimize + sampling flags instead.
+arm = next((o for o in bpy.data.objects if o.type == "ARMATURE"), None)
+
+# ── 3e. clothe the figure (shorts + tank top) ────────────────────────────────
+# The nude base reads wrong for a fitness app. Rather than depend on MPFB's
+# separate clothing asset packs, paint gym wear directly: assign per-face
+# materials by HEIGHT BAND — shorts across the hips + upper thighs, a tank top
+# across the torso, skin everywhere else. Deterministic, no external assets, and
+# it moves with the body since it's the body's own faces. Uses the front/back Z.
+me = basemesh.data
+zs = [(basemesh.matrix_world @ v.co).z for v in me.vertices]
+z_min, z_max = min(zs), max(zs)               # feet ~0 → crown ~1.8
+H = z_max - z_min
+
+def add_mat(name, rgba, rough=0.6):
+    m = bpy.data.materials.new(name)
+    m.use_nodes = True
+    b = m.node_tree.nodes["Principled BSDF"]
+    b.inputs["Base Color"].default_value = rgba
+    b.inputs["Roughness"].default_value = rough
+    me.materials.append(m)
+    return len(me.materials) - 1
+
+# Material slots: 0 = skin (existing/first), then shorts, top.
+skin_idx = 0 if me.materials else add_mat("skin", (0.80, 0.60, 0.48, 1.0), 0.55)
+shorts_idx = add_mat("shorts", (0.11, 0.13, 0.18, 1.0), 0.7)   # dark graphite
+top_idx = add_mat("top", (0.25, 0.55, 1.0, 1.0), 0.55)          # blue tank (theme)
+
+# Clothe the TORSO CORE only: a face is clothing if it's in the right height
+# band AND close to the body's vertical centerline (so the ARMS — which hang at
+# torso height beside the trunk — stay bare skin). torso half-width ≈ 0.16 m at
+# the chest; arms sit beyond ~0.20 m. Legs stay within the centerline so the
+# shorts wrap both thighs.
+CENTER_X = sum((basemesh.matrix_world @ v.co).x for v in me.vertices) / len(me.vertices)
+TORSO_HALF = 0.19   # m from centerline that still counts as trunk (not arm)
+
+def band(poly):
+    c = basemesh.matrix_world @ poly.center
+    f = (c.z - z_min) / H
+    dx = abs(c.x - CENTER_X)
+    if 0.44 <= f < 0.55:                 # shorts: hips + upper thigh (legs are central)
+        return shorts_idx
+    if 0.55 <= f < 0.73 and dx <= TORSO_HALF:   # tank: torso core only, not the arms
+        return top_idx
+    return skin_idx
+
+for poly in me.polygons:
+    poly.material_index = band(poly)
+print("[mpfb] clothed: shorts + tank top (torso-core gated so arms stay bare)")
+
 # ── 4. report the rig's bone names (so we can map our clips) ──────────────────
-arm = None
-for o in bpy.data.objects:
-    if o.type == "ARMATURE":
-        arm = o
-        break
 if arm:
     names = [b.name for b in arm.data.bones]
     print("[mpfb] rig bones (%d):" % len(names), names)

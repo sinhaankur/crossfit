@@ -3,11 +3,12 @@
 import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import type { Movement } from "@/lib/movements";
-import { ChevronLeft, ChevronRight, ShieldAlert, Check, Sparkles, Dumbbell, Activity, PersonStanding, Accessibility, Volume2, VolumeX } from "lucide-react";
+import { ChevronLeft, ChevronRight, ShieldAlert, Check, Sparkles, Dumbbell, Activity, PersonStanding, Accessibility, Volume2, VolumeX, Users } from "lucide-react";
 import { award, loadGame, levelFor } from "@/lib/game";
 import { MuscleMap } from "./muscle-map";
 import { musclesFor, MUSCLE_PLAIN, MUSCLE_LABEL, MUSCLE_DOES, type MuscleId } from "@/lib/anatomy";
 import { speak, stopSpeaking, speechSupported } from "@/lib/speak";
+import { AGE_PROFILES, AGE_ORDER, suggestsAdaptive, type AgeGroup } from "@/lib/age-groups";
 
 // CloserLook — a SINGLE-SCREEN, gamified movement trainer. No long scroll: the 3D
 // human fills the stage, form steps advance in a compact control, muscles show in
@@ -49,6 +50,10 @@ export function CloserLook({ movements }: { movements: Movement[] }) {
   // Client-only "can we speak?" — checked after mount so the button's presence
   // matches between server and client (no hydration mismatch).
   const [canSpeak, setCanSpeak] = useState(false);
+  // Age group — reshapes the coaching guidance (reps/tempo/safety) for whoever's
+  // training. "adults" default; persisted. Deterministic data, no model.
+  const [age, setAge] = useState<AgeGroup>("adults");
+  const [ageOpen, setAgeOpen] = useState(false);
   const seen = useRef<Set<number>>(new Set([0]));
   const m = movements[mi];
   // Canonical worked-muscles for this movement (drives the plain-language chips
@@ -68,8 +73,14 @@ export function CloserLook({ movements }: { movements: Movement[] }) {
   useEffect(() => {
     setCanSpeak(speechSupported());
     try { if (localStorage.getItem("kelo-voice") === "1") setVoice(true); } catch {}
+    try { const a = localStorage.getItem("kelo-age") as AgeGroup | null; if (a && AGE_PROFILES[a]) setAge(a); } catch {}
     return () => stopSpeaking();
   }, []);
+  function chooseAge(a: AgeGroup) {
+    setAge(a); setAgeOpen(false);
+    try { localStorage.setItem("kelo-age", a); } catch {}
+  }
+  const ageProfile = AGE_PROFILES[age];
   // Read the current step aloud whenever voice is on and the step / movement /
   // variant changes. On-device speech; silent no-op where unsupported.
   useEffect(() => {
@@ -124,6 +135,25 @@ export function CloserLook({ movements }: { movements: Movement[] }) {
               <span className="hidden sm:inline">{voice ? "Voice on" : "Voice"}</span>
             </button>
           )}
+          {/* Age group — reshapes the coaching guidance below for whoever's
+              training (kids → older adults). Small dropdown; persisted. */}
+          <div className="relative">
+            <button onClick={() => setAgeOpen((v) => !v)} aria-expanded={ageOpen}
+              className="flex items-center gap-1 rounded-full bg-white/5 px-2.5 py-1 text-xs font-semibold text-[var(--muted)] hover:text-white transition">
+              <Users className="h-3.5 w-3.5" /> {ageProfile.label}
+            </button>
+            {ageOpen && (
+              <div className="absolute right-0 z-30 mt-1 w-44 rounded-xl border border-[var(--line)] bg-[var(--card)] p-1 shadow-2xl">
+                {AGE_ORDER.map((a) => (
+                  <button key={a} onClick={() => chooseAge(a)}
+                    className={`flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-left text-xs transition ${a === age ? "bg-[var(--accent)]/20 text-[var(--accent)]" : "text-[var(--fg)] hover:bg-white/5"}`}>
+                    <span className="font-semibold">{AGE_PROFILES[a].label}</span>
+                    <span className="text-[10px] text-[var(--muted)]">{AGE_PROFILES[a].range}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
           <span className="rounded-full bg-white/5 px-2.5 py-1 text-xs font-semibold">Lv {lvl.level} · {lvl.title}</span>
           <div className="hidden h-2 w-24 overflow-hidden rounded-full bg-white/10 sm:block">
             <div className="h-full bg-[var(--accent)] transition-[width]" style={{ width: `${lvl.pct * 100}%` }} />
@@ -151,7 +181,7 @@ export function CloserLook({ movements }: { movements: Movement[] }) {
             ? <div className="grid h-full place-items-center overflow-auto p-4"><div className="w-full max-w-md"><MuscleMap pattern={m.pattern} /></div></div>
             : view === "anatomy"
               ? <AnatomyHuman pattern={m.pattern} />
-              : <Human3D pattern={m.pattern} seated={av?.kind === "seated"} />}
+              : <Human3D pattern={m.pattern} variant={av?.kind === "seated" ? "seated" : av?.kind === "supported" ? "supported" : undefined} />}
         </div>
 
         {/* view switch: Action (rep + gear) · Muscles · Map — a 3-segment pill */}
@@ -223,6 +253,23 @@ export function CloserLook({ movements }: { movements: Movement[] }) {
                 <p className="text-[var(--fg)]/80"><span className="text-[var(--muted)]">No kit?</span> {m.gear.alternatives[0]}</p>
                 {m.gear.machine && <p className="text-[var(--fg)]/80"><span className="text-[var(--muted)]">Gym machine:</span> {m.gear.machine}</p>}
               </>
+            )}
+          </div>
+        </details>
+
+        {/* age-appropriate guidance — bottom-left, above the gear. Reps + the
+            safety emphasis that matters most at the chosen age. For older adults,
+            a gentle nudge toward the seated/supported variant when one exists. */}
+        <details className="group absolute bottom-[10.5rem] left-3 max-w-[70%] rounded-2xl bg-black/45 p-3 text-left backdrop-blur-sm">
+          <summary className="flex cursor-pointer list-none items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-[var(--muted)]">
+            <Users className="h-3.5 w-3.5" /> {ageProfile.label} · {ageProfile.range}
+            <span className="text-[9px] opacity-60 group-open:hidden">tap</span>
+          </summary>
+          <div className="mt-1.5 space-y-1 text-[12px]">
+            <p className="text-[var(--fg)]/90">{ageProfile.reps}</p>
+            <p className="text-[var(--fg)]/70"><span className="text-[var(--muted)]">Watch:</span> {ageProfile.emphasis}</p>
+            {suggestsAdaptive(age) && m.adaptive && m.adaptive.length > 0 && variant === -1 && (
+              <p className="text-[var(--accent)]">Tip: try the {m.adaptive[0].label} version below for extra safety.</p>
             )}
           </div>
         </details>

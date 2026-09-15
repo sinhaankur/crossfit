@@ -394,6 +394,27 @@ make_seated("seated-carry", 72, [
     {"frame": 72, "torso_lean": 3, "arm_sh": 4, "arm_el": 6},
 ])
 
+# ── CHAIR-SUPPORTED squat — standing behind a chair, hands on its back for
+# balance, a SHALLOWER partial squat. Feet planted (IK), hips sink less than the
+# full squat, arms reach forward-down to rest on the chair back. Only air-squat
+# has a chair-supported variant (see lib/movements.ts). ─────────────────────────
+a = new_action("supported-squat", 72)
+setup_leg_ik()
+def supported_frame(frame, drop, torso_lean, arm_sh, arm_el):
+    key(BN("hips"), frame, rx=flex("hips", torso_lean), loc=hips_offset(0.02, -drop))
+    key(BN("spine"), frame, rx=flex("hips", torso_lean * 0.5))
+    key(BN("chest"), frame, rx=flex("hips", torso_lean * 0.3))
+    for s in ("L", "R"):
+        key(BN("upperarm", s), frame, rx=flex("upperarm", arm_sh))
+        key(BN("forearm", s), frame, rx=flex("forearm", arm_el))
+# Hands reach forward-down (arm_sh ~70, elbow slightly bent) to the chair back;
+# partial depth (0.26 vs the full squat's 0.44).
+supported_frame(1,  0.02, 6,  70, 25)
+supported_frame(36, 0.26, 16, 68, 22)   # partial squat, hands still on the back
+supported_frame(72, 0.02, 6,  70, 25)
+bake_ik_to_fk(1, 72)
+ACTIONS["supported-squat"] = a
+
 bpy.ops.object.mode_set(mode="OBJECT")
 
 # ── equipment (world-static bars at the hand grip; reused from human_rig_build)─
@@ -455,7 +476,21 @@ def make_chair():
     parts.append(cube("back", 0.42, 0.04, 0.42, (0, -0.10, SEAT_Z + 0.23), WOOD))
     return join_as("chair", parts)
 
+def make_support_chair():
+    """A chair placed in FRONT of a standing figure, its back toward them, so
+    hands rest on the back for balance (the chair-supported variant)."""
+    WOOD = mat("chair", (0.30, 0.34, 0.42, 1.0), 0.7)
+    # seat centered ~0.42 m forward (−Y), back edge nearest the figure.
+    parts = [cube("s_seat", 0.42, 0.42, 0.04, (0, -0.42, SEAT_Z), WOOD)]
+    for lx, ly in ((0.18, -0.24), (-0.18, -0.24), (0.18, -0.62), (-0.18, -0.62)):
+        parts.append(cube(f"s_leg_{lx}_{ly}", 0.04, 0.04, SEAT_Z, (lx, ly, SEAT_Z / 2), WOOD))
+    # back at the near edge (−Y ~ -0.24), rising to hand height (~0.90).
+    parts.append(cube("s_back", 0.42, 0.04, 0.42, (0, -0.24, SEAT_Z + 0.23), WOOD))
+    return join_as("support_chair", parts)
+
 def build_gear(mv):
+    if mv == "supported-squat":
+        return [make_support_chair()]
     if mv.startswith("seated-"):
         return [make_chair()]
     if mv == "squat":
@@ -481,10 +516,11 @@ frame_ends = {"squat": 72, "deadlift": 72, "press": 64, "pullup": 64,
               "plank": 72, "walk": 48, "run": 32, "idle": 96,
               "seated-squat": 72, "seated-deadlift": 72, "seated-press": 64,
               "seated-row": 64, "seated-core": 72, "seated-cardio": 40,
-              "seated-catcow": 96, "seated-carry": 72}
+              "seated-catcow": 96, "seated-carry": 72, "supported-squat": 72}
 for mv in ["squat", "deadlift", "press", "pullup", "plank", "walk", "run", "idle",
            "seated-squat", "seated-deadlift", "seated-press", "seated-row",
-           "seated-core", "seated-cardio", "seated-catcow", "seated-carry"]:
+           "seated-core", "seated-cardio", "seated-catcow", "seated-carry",
+           "supported-squat"]:
     rig.animation_data.action = ACTIONS[mv]
     scene.frame_start, scene.frame_end = 1, frame_ends[mv]
     scene.frame_set(1)
