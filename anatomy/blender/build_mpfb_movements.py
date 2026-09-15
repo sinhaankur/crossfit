@@ -151,20 +151,85 @@ def new_action(name, last):
     scene.frame_start, scene.frame_end = 1, last
     return act
 
+# ── IK helpers (for planted-foot poses: squat, plank) ─────────────────────────
+# FK leg-posing can't pin the feet on MPFB's multi-segment legs (squat balled
+# up, plank piked). IK does: pin each foot to a target at ground contact, then
+# just move the hips — the legs solve with the feet staying put. Constraints are
+# BAKED to keyframes before export, then removed, so the GLB is plain FK.
+_ik_targets = []
+
+def setup_leg_ik():
+    """Create foot IK targets at the feet's rest positions + IK constraints on
+    the lower-leg tips (chain up to the hip). Returns the two target objects."""
+    bpy.ops.object.mode_set(mode="OBJECT")
+    dgi = bpy.context.evaluated_depsgraph_get()
+    ev = rig.evaluated_get(dgi)
+    tgts = {}
+    for s in ("L", "R"):
+        foot_w = (ev.matrix_world @ ev.pose.bones[f"foot.{s}"].matrix).translation.copy()
+        t = bpy.data.objects.new(f"ik_foot_{s}", None)
+        scene.collection.objects.link(t)
+        t.location = foot_w
+        tgts[s] = t
+        _ik_targets.append(t)
+    bpy.ops.object.mode_set(mode="POSE")
+    for s in ("L", "R"):
+        tip = pb.get(f"lowerleg02.{s}") or pb[f"lowerleg01.{s}"]
+        ik = tip.constraints.new("IK")
+        ik.target = tgts[s]
+        ik.chain_count = 3   # lowerleg02 → lowerleg01 → upperleg02 (knee+hip)
+    return tgts
+
+def clear_leg_ik():
+    bpy.ops.object.mode_set(mode="POSE")
+    for s in ("L", "R"):
+        tip = pb.get(f"lowerleg02.{s}") or pb[f"lowerleg01.{s}"]
+        for c in list(tip.constraints):
+            if c.type == "IK":
+                tip.constraints.remove(c)
+    bpy.ops.object.mode_set(mode="OBJECT")
+    for t in list(_ik_targets):
+        bpy.data.objects.remove(t, do_unlink=True)
+    _ik_targets.clear()
+
+def bake_ik_to_fk(first, last):
+    """Bake the IK-solved motion to plain FK keyframes on every bone, in place;
+    clears the IK constraints AND the target empties, leaving a clean FK clip."""
+    bpy.context.view_layer.objects.active = rig
+    bpy.ops.object.mode_set(mode="POSE")
+    bpy.ops.pose.select_all(action="SELECT")
+    bpy.ops.nla.bake(frame_start=first, frame_end=last, only_selected=True,
+                     visual_keying=True, clear_constraints=True,
+                     use_current_action=True, bake_types={"POSE"})
+    bpy.ops.object.mode_set(mode="OBJECT")
+    for t in list(_ik_targets):
+        bpy.data.objects.remove(t, do_unlink=True)
+    _ik_targets.clear()
+    bpy.context.view_layer.objects.active = rig
+    bpy.ops.object.mode_set(mode="POSE")
+
 ACTIONS = {}
 
 # ── the 8 movements (same designed poses as human_rig_build.py) ───────────────
 # Squat — parallel depth. MPFB's legs sit a hair longer than the mannequin's, so
 # the mannequin's 0.53 drop over-flexed into a ball; 0.42 hits a clean parallel.
 # Front-rack arms: elbows high, hands to the front-delts (bar racked on shoulders).
+# SQUAT (IK) — pin the feet, sink the hips straight down (a touch back), let IK
+# bend knees+hips with the feet planted. Front-rack arms. Then bake IK→FK.
 a = new_action("squat", 72)
-t, k, f = solve_leg(0.05, HIP_Z - 0.42)
-key_pose(1)
-# Upright torso (real squat leans only ~12° at the hip); front-rack arms use
-# leg_no_compensate-style: keep the shoulder small so torso_total doesn't swing
-# them overhead. shoulder ~55 = upper arms forward+up to rack the bar.
-key_pose(36, torso=(10, 6, 4), hip_move=(0.05, HIP_Z - 0.42), legs=(t, k, f), shoulder=(55, 55), elbow=(125, 125))
-key_pose(72)
+setup_leg_ik()
+def squat_frame(frame, drop, back, arm_sh, arm_el, torso_lean):
+    # hips move down `drop` and back `back` (world m); IK keeps feet planted.
+    key(BN("hips"), frame, rx=flex("hips", torso_lean), loc=hips_offset(back, -drop))
+    key(BN("spine"), frame, rx=flex("hips", torso_lean * 0.5))
+    key(BN("chest"), frame, rx=flex("hips", torso_lean * 0.3))
+    for s in ("L", "R"):
+        key(BN("upperarm", s), frame, rx=flex("upperarm", arm_sh))
+        key(BN("forearm", s), frame, rx=flex("forearm", arm_el))
+squat_frame(1, 0.0, 0.0, 12, 18, 2)
+squat_frame(36, 0.44, 0.04, 40, 120, 14)   # parallel
+squat_frame(72, 0.0, 0.0, 12, 18, 2)
+bake_ik_to_fk(1, 72)
 ACTIONS["squat"] = a
 
 a = new_action("deadlift", 72)
@@ -190,12 +255,14 @@ ACTIONS["pullup"] = a
 # pitched body (leg_no_compensate: thigh local ≈ -90 points it back-level under
 # an 88° pelvis pitch); tiny knee bend; toes tucked so the balls of the feet
 # meet the mat. Forearms flat (elbow 88° under vertical upper arms).
+# PLANK — body horizontal on the forearms, legs extended straight back. Built
+# in FK with leg_no_compensate (the body IS the reference line here, so the
+# "keep legs vertical" compensation is wrong): thigh −82 world extends the leg
+# back-and-slightly-down to the planted toes; knee near-straight; toes tucked.
 a = new_action("plank", 72)
-for fr, dip in ((1, 0.0), (36, 1.0), (72, 0.0)):
-    # legs -78 → extend back and slightly DOWN so hips sit at plank height (not a
-    # pike); hips a touch lower; toes tucked.
-    key_pose(fr, torso=(90 + dip, 1, 0), hip_move=(0.0, HIP_Z - 0.30),
-             legs=(-78, 2, 80), shoulder=(0, 0), elbow=(90, 90), neck=-20,
+for fr, dip in ((1, 0.0), (36, 0.8), (72, 0.0)):
+    key_pose(fr, torso=(90 + dip, 1, 0), hip_move=(0.0, HIP_Z - 0.32),
+             legs=(-82, 3, 84), shoulder=(0, 0), elbow=(92, 92), neck=-22,
              leg_no_compensate=True)
 ACTIONS["plank"] = a
 
