@@ -38,6 +38,27 @@ export interface Movement {
   /** Attribution when the movement's base data came from an external source
    *  (our hand-written 14 have none; curated additions cite the public-domain DB). */
   source?: string;
+  /** ADAPTIVE variants — "exercise for all". Each is a real, dignified way to
+   *  train the SAME pattern for a body that can't do the standing/loaded default:
+   *  seated/chair, limited mobility, etc. Not "easier" — a genuine alternative
+   *  with its own cues + safety. Pure data (a tinyLLM only voices it). */
+  adaptive?: AdaptiveVariant[];
+}
+
+export type AdaptiveKind = "seated" | "supported" | "low-impact";
+
+export interface AdaptiveVariant {
+  kind: AdaptiveKind;
+  /** Short name shown on the variant chip, e.g. "Seated" / "Chair-supported". */
+  label: string;
+  /** Who this is for, in plain words ("wheelchair users, limited standing…"). */
+  forWhom: string;
+  /** Its own numbered form cues (the seated/adapted way to do the pattern). */
+  steps: string[];
+  /** Its own safety note. */
+  safety: string;
+  /** Gear needed for the adapted version (a sturdy chair, resistance band…). */
+  gear: string;
 }
 
 export const MOVEMENTS: Movement[] = [
@@ -54,6 +75,30 @@ export const MOVEMENTS: Movement[] = [
     scale: "Squat to a chair/box and stand back up. Only go as low as you can control.",
     primary: ["Quads", "Glutes"], secondary: ["Hamstrings", "Core", "Calves", "Adductors"],
     gear: { needed: "Nothing — bodyweight", alternatives: ["Hold a chair/rail for balance", "Add a backpack of books for load"], machine: "Leg press or hack-squat machine" },
+    adaptive: [
+      {
+        kind: "seated", label: "Seated", forWhom: "Wheelchair users, or anyone who can't stand safely",
+        steps: [
+          "Sit tall near the front of a sturdy chair, feet flat and hip-width.",
+          "Cross your arms or reach them forward for balance.",
+          "Press through your feet and squeeze your glutes to stand — or lift your hips just off the seat.",
+          "Lower back down slow and controlled. That's one rep.",
+        ],
+        safety: "Use a chair that won't slide (against a wall is ideal). Only rise as far as you safely can — even a small hip-lift counts.",
+        gear: "A sturdy, non-rolling chair",
+      },
+      {
+        kind: "supported", label: "Chair-supported", forWhom: "Balance issues, older adults, recovering from injury",
+        steps: [
+          "Stand behind a chair, hands resting on the back for support.",
+          "Send your hips back and down as far as is comfortable.",
+          "Keep your weight in your heels; let the chair steady you, not carry you.",
+          "Drive up to standing. Squeeze at the top.",
+        ],
+        safety: "The chair is for balance, not to pull on. Stop at any knee or hip pain and reduce depth.",
+        gear: "A sturdy chair or a countertop to hold",
+      },
+    ],
   },
   {
     id: "box-step-up", name: "Box Step-Up", pattern: "squat", needs: ["box"], intensity: "gentle",
@@ -80,6 +125,19 @@ export const MOVEMENTS: Movement[] = [
     scale: "Hinge with no weight (hands sliding down your thighs) to groove the pattern first.",
     primary: ["Glutes", "Hamstrings"], secondary: ["Erector spinae (lower back)", "Lats", "Forearms (grip)", "Core"],
     gear: { needed: "Dumbbells or a barbell", alternatives: ["A loaded backpack", "A heavy water jug / kettlebell", "Two grocery bags, evenly loaded"], machine: "Cable/trap-bar or seated back-extension machine" },
+    adaptive: [
+      {
+        kind: "seated", label: "Seated", forWhom: "Wheelchair users, limited standing — trains the same back + grip",
+        steps: [
+          "Sit tall, a weight (or bag) resting on the floor between your feet.",
+          "Hinge forward from the hips with a long, flat back — chest toward your knees.",
+          "Grip the weight and stand it up your shins as you sit back tall, squeezing your back.",
+          "Lower it under control. Keep the back flat the whole time.",
+        ],
+        safety: "Move from the HIPS, not a rounded spine. Go light — the pattern matters more than the load.",
+        gear: "A dumbbell, bag, or jug you can reach from seated",
+      },
+    ],
   },
   {
     id: "kb-swing", name: "Kettlebell Swing", pattern: "hinge", needs: ["kettlebell"], intensity: "moderate",
@@ -106,6 +164,29 @@ export const MOVEMENTS: Movement[] = [
     scale: "Push up from your knees, or hands on a wall/bench at an incline.",
     primary: ["Chest (pectorals)", "Triceps"], secondary: ["Front delts", "Core", "Serratus anterior"],
     gear: { needed: "Nothing — bodyweight", alternatives: ["Hands on a wall (easier)", "Hands on a sturdy table/bench (incline)"], machine: "Chest-press or pec-deck machine" },
+    adaptive: [
+      {
+        kind: "seated", label: "Seated press-out", forWhom: "Wheelchair users, or anyone pressing from a chair",
+        steps: [
+          "Sit tall, a resistance band behind your upper back, an end in each hand at chest height.",
+          "Press both hands straight forward until your arms are long.",
+          "Squeeze your chest at the end, then return slow with control.",
+          "Keep your shoulders down, away from your ears.",
+        ],
+        safety: "Anchor the band so it can't snap back at you. No band? Press your palms together hard for 5 seconds instead.",
+        gear: "A resistance band (or palms-together isometric)",
+      },
+      {
+        kind: "supported", label: "Wall push-up", forWhom: "Beginners, wrist/shoulder issues, limited floor mobility",
+        steps: [
+          "Stand arm's length from a wall, hands flat at shoulder height.",
+          "Bend your elbows to bring your chest toward the wall.",
+          "Press back to the start. Keep your body in one straight line.",
+        ],
+        safety: "The further your feet from the wall, the harder it gets — start close and easy.",
+        gear: "A wall",
+      },
+    ],
   },
   {
     id: "db-press", name: "Dumbbell Shoulder Press", pattern: "push", needs: ["dumbbell"], intensity: "moderate",
@@ -132,6 +213,19 @@ export const MOVEMENTS: Movement[] = [
     scale: "Stand more upright (feet further back) so you pull less of your bodyweight.",
     primary: ["Upper back (rhomboids)", "Lats"], secondary: ["Biceps", "Rear delts", "Forearms (grip)", "Core"],
     gear: { needed: "Rings or a bar at chest height", alternatives: ["A sturdy table edge (row under it)", "A broomstick across two chairs", "A towel looped around a solid post"], machine: "Seated cable row or lat-pulldown machine" },
+    adaptive: [
+      {
+        kind: "seated", label: "Seated band row", forWhom: "Wheelchair users, limited standing — same back + biceps pull",
+        steps: [
+          "Sit tall, a band looped around your feet (or a low anchor), an end in each hand, arms long.",
+          "Pull your elbows straight back, squeezing your shoulder blades together.",
+          "Keep your chest tall — don't lean back to cheat the weight.",
+          "Return slow until your arms are long again.",
+        ],
+        safety: "Lead with the elbows, not the hands. Keep shoulders down and relaxed at the start of each pull.",
+        gear: "A resistance band + a low anchor (or your own feet)",
+      },
+    ],
   },
   {
     id: "hollow-hold", name: "Hollow Hold", pattern: "core", needs: ["none"], intensity: "gentle",
@@ -145,6 +239,19 @@ export const MOVEMENTS: Movement[] = [
     scale: "Bend your knees, or hold with arms by your sides and legs higher.",
     primary: ["Core (rectus abdominis)"], secondary: ["Hip flexors", "Quads", "Deep core (transverse abdominis)"],
     gear: { needed: "Nothing — bodyweight", alternatives: ["Bend knees to make it easier", "A mat for comfort"], machine: "Cable crunch / captain's chair" },
+    adaptive: [
+      {
+        kind: "seated", label: "Seated core brace", forWhom: "Wheelchair users, back pain, can't lie on the floor",
+        steps: [
+          "Sit tall, away from the backrest, feet flat (or as able).",
+          "Take a breath, then brace your stomach as if about to be gently poked.",
+          "Hold the brace and breathe shallowly for 10–20 seconds.",
+          "Optional: slowly lift one knee, hold, lower — keeping the brace the whole time.",
+        ],
+        safety: "Never hold your breath — brace and breathe. Stop if you feel strain in your lower back.",
+        gear: "A chair",
+      },
+    ],
   },
   {
     id: "plank", name: "Plank", pattern: "core", needs: ["none"], intensity: "gentle",
@@ -170,6 +277,19 @@ export const MOVEMENTS: Movement[] = [
     scale: "Lighter weights, or carry one weight and switch hands halfway.",
     primary: ["Forearms (grip)", "Traps"], secondary: ["Core", "Glutes", "Upper back", "Calves"],
     gear: { needed: "Two dumbbells or kettlebells", alternatives: ["Two loaded grocery bags", "Two water jugs", "A single heavy bag, switch sides"], machine: "Trap-bar carry or loaded sled push" },
+    adaptive: [
+      {
+        kind: "seated", label: "Seated hold", forWhom: "Wheelchair users, can't walk-loaded — same grip + core brace",
+        steps: [
+          "Sit tall, a weight in each hand hanging at your sides.",
+          "Pull your shoulders down and back, brace your core.",
+          "Hold, breathing steadily, for 20–40 seconds — grip hard the whole time.",
+          "Rest, then repeat. Wheelable? Roll a short lap holding the weights.",
+        ],
+        safety: "Keep shoulders down (not shrugged to your ears). Put the weights down the moment your grip fails.",
+        gear: "Two weights, jugs, or bags you can hold",
+      },
+    ],
   },
   {
     id: "row-bike", name: "Row / Bike / Brisk Walk", pattern: "cardio", needs: ["rower-bike"], intensity: "moderate",
@@ -183,6 +303,19 @@ export const MOVEMENTS: Movement[] = [
     scale: "A brisk walk counts. Go by effort, not speed.",
     primary: ["Legs", "Heart & lungs (cardio)"], secondary: ["Back", "Arms", "Core"],
     gear: { needed: "A rower or bike", alternatives: ["A brisk walk or jog", "Marching / stairs at home", "A skipping rope"], machine: "Rower, assault bike, elliptical or treadmill" },
+    adaptive: [
+      {
+        kind: "seated", label: "Seated cardio", forWhom: "Wheelchair users, limited standing — get the heart rate up seated",
+        steps: [
+          "Sit tall. Pump both arms overhead and down in a steady rhythm.",
+          "Add fast seated punches — alternate hands out in front, quick and light.",
+          "March your feet if you can, or tap heel-toe to the beat.",
+          "Work 20–40 seconds hard, rest, repeat. Aim for lightly breathless.",
+        ],
+        safety: "Build up gradually. Slow down if you feel dizzy or chest-tight — breathless is fine, painful is not.",
+        gear: "Nothing — or light hand weights to raise the effort",
+      },
+    ],
   },
   {
     id: "jump-rope", name: "Jump Rope / Line Hops", pattern: "cardio", needs: ["jump-rope"], intensity: "moderate",
@@ -208,6 +341,19 @@ export const MOVEMENTS: Movement[] = [
     scale: "Smaller range of motion; stop at any pinch.",
     primary: ["Spinal mobility"], secondary: ["Core", "Neck", "Shoulders"],
     gear: { needed: "Nothing — a mat helps", alternatives: ["Carpet or a folded towel", "Do it seated if kneeling hurts"] },
+    adaptive: [
+      {
+        kind: "seated", label: "Seated Cat–Cow", forWhom: "Wheelchair users, can't get on all-fours — same gentle spine mobility",
+        steps: [
+          "Sit tall, hands resting on your thighs or knees.",
+          "Breathe in: arch gently, lift your chest and look slightly up (Cow).",
+          "Breathe out: round your back, tuck your chin, draw your belly in (Cat).",
+          "Flow slowly with your breath for 5–8 rounds.",
+        ],
+        safety: "Move only within a comfortable range — this is mobility, never a stretch you force. Stop at any sharp pain.",
+        gear: "A chair",
+      },
+    ],
   },
   {
     id: "world-greatest", name: "World's Greatest Stretch (mobility)", pattern: "mobility", needs: ["none"], intensity: "gentle",
