@@ -7,6 +7,7 @@ import { loadLog, personalRecords, SCORING_LABEL } from "@/lib/wod-log";
 import { loadGoals, goalProgress, type Goal } from "@/lib/body";
 import { loadOneRMs, LIFT_LABEL, type OneRMs } from "@/lib/strength";
 import { lifeAdded } from "@/lib/game";
+import { MoodCheckin } from "@/components/mood-checkin";
 
 // /today — the dashboard home for someone who's using the app: one glance at
 // where you stand. This week's training, your streak, active goals, top PRs, and
@@ -42,7 +43,12 @@ export default function TodayPage() {
       <SiteNav />
       <div className="mx-auto max-w-3xl px-5 py-8">
         <p className="font-mono-eyebrow text-[var(--muted)]">{greeting()} · today</p>
-        <h1 className="mt-2 text-3xl font-bold sm:text-4xl">Where you stand.</h1>
+        <h1 className="mt-2 font-display text-3xl font-light tracking-[-0.01em] sm:text-4xl">Where you stand.</h1>
+
+        {/* Mental check-in — health AND mental. Shows the day's mood/energy/
+            stress and a kind, deterministic suggestion (rest · gentle · go).
+            Sits at the top because how you feel shapes everything below. */}
+        <MoodCheckin />
 
         {empty ? (
           <div className="mt-8 rounded-3xl border border-dashed border-white/15 p-8 text-center">
@@ -120,9 +126,10 @@ export default function TodayPage() {
 
         {/* quick actions — always available */}
         <Section title="Jump in">
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
             <Quick href="/#build" label="Build a plan" emoji="📋" />
             <Quick href="/routines" label="Warm up" emoji="🧘" />
+            <Quick href="/breathe" label="Breathe" emoji="🌬️" />
             <Quick href="/log" label="Log a workout" emoji="✍️" />
             <Quick href="/calendar" label="Calendar" emoji="🗓" />
           </div>

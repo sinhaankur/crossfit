@@ -24,6 +24,7 @@ const NAV: Group[] = [
       { href: "/movements", label: "Movements" },
       { href: "/routines", label: "Warm-up & mobility" },
       { href: "/benchmarks", label: "Benchmark WODs" },
+      { href: "/breathe", label: "Breathe (mind)" },
     ],
   },
   {
