@@ -16,16 +16,17 @@ function hasWebGL() {
 // with the rep playing as an animation clip. This is a SHARED asset — the same
 // fit human drives both the CrossFit movement demos here and the Mars One game.
 //
-// The model lives at /public/models/human.glb (a rigged glTF with named clips
-// like "squat", "deadlift", "idle"). Until that file is present — or where WebGL
-// isn't available — we fall back to the clean SVG FigureStage so the page never
-// breaks. Author attribution for any CC-BY model goes in MODEL_CREDIT below.
+// The movement figures are OUR OWN build — anatomy/human_rig_build.py: a
+// skinned athletic figure at real anthropometric proportions, with each rep
+// keyframed procedurally (analytic 2-link leg solve keeps the feet planted
+// through squat/hinge) and exported as one GLB per movement. Where a file is
+// missing — or WebGL isn't available — we fall back to the procedural
+// mannequin / SVG FigureStage so the page never breaks.
 //
-// © Ankur Sinha. Model: see MODEL_CREDIT.
+// © Ankur Sinha. Rig, mesh, and animation are original work (no Mixamo).
 
-// Mixamo exports one .glb per animation (character + its clip). We map each
-// movement pattern to its file in /public/models/. Drop the Mixamo glTF files
-// there (squat.glb, deadlift.glb, …) and the 3D human lights up automatically.
+// One .glb per movement (figure + its clip), mapped by pattern. Rebuild all
+// eight with: Blender -b --factory-startup -P anatomy/human_rig_build.py
 const MODEL_FOR: Record<Pattern, string> = {
   squat: "/models/squat.glb",
   hinge: "/models/deadlift.glb",
@@ -38,9 +39,9 @@ const MODEL_FOR: Record<Pattern, string> = {
 };
 
 export const MODEL_CREDIT: { author: string; url: string; license: string } = {
-  author: "Adobe Mixamo",
-  url: "https://www.mixamo.com",
-  license: "Adobe Mixamo license (free use)",
+  author: "Ankur Sinha",
+  url: "https://www.sinhaankur.com",
+  license: "© Ankur Sinha — original rigged figure (anatomy/human_rig_build.py)",
 };
 
 export function Human3D({ pattern }: { pattern: Pattern }) {
