@@ -1,0 +1,61 @@
+name: Deploy to Cloudflare Pages
+
+# The dashboard GitHub-integration deploy stalled (2026-09-15): pushes stopped
+# deploying, so the live site went stale and /models/*.glb 404'd. This committed
+# workflow takes deployment off the flaky dashboard and into a reliable pipeline:
+# every push to main builds the static export and uploads the WHOLE out/ (models
+# included) to Cloudflare Pages via wrangler.
+#
+# ONE-TIME SETUP (repo → Settings → Secrets and variables → Actions):
+#   CLOUDFLARE_API_TOKEN   — a token with "Cloudflare Pages: Edit" permission
+#   CLOUDFLARE_ACCOUNT_ID  — your Cloudflare account id
+# And confirm the Pages project name below matches your project (default: crossfit).
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: pages-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      deployments: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile=false
+
+      - name: Build static export
+        run: pnpm build
+
+      - name: Verify models are in the build (guards the 404 regression)
+        run: |
+          count=$(find out/models -name '*.glb' | wc -l | tr -d ' ')
+          echo "GLB models in out/: $count"
+          test "$count" -ge 10 || { echo "::error::models missing from build"; exit 1; }
+
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy out --project-name=crossfit --branch=main
