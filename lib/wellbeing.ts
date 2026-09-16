@@ -60,6 +60,47 @@ export function checkinStreak(all = loadCheckins()): number {
   return n;
 }
 
+// ── history / trends ──────────────────────────────────────────────────────────
+// A calm way to see the last stretch of days — mood/energy accumulate into a
+// picture without turning feelings into a leaderboard. All local.
+
+export interface DaySeriesPoint { date: string; checkin: Checkin | null; }
+
+/** The last `n` days (oldest→newest), each with its check-in or null (a gap). */
+export function recentSeries(n = 14, all = loadCheckins()): DaySeriesPoint[] {
+  const byDate = new Map(all.map((c) => [c.date, c]));
+  const out: DaySeriesPoint[] = [];
+  const d = new Date();
+  for (let i = n - 1; i >= 0; i--) {
+    const day = new Date(d);
+    day.setDate(d.getDate() - i);
+    const k = todayKey(day);
+    out.push({ date: k, checkin: byDate.get(k) ?? null });
+  }
+  return out;
+}
+
+/** Average mood over the logged days in the window (null if none logged). */
+export function averageMood(n = 14, all = loadCheckins()): number | null {
+  const pts = recentSeries(n, all).filter((p) => p.checkin);
+  if (!pts.length) return null;
+  return pts.reduce((s, p) => s + (p.checkin!.mood as number), 0) / pts.length;
+}
+
+/** A gentle trend read comparing the recent half-window to the earlier half. */
+export function moodTrend(n = 14, all = loadCheckins()): "up" | "steady" | "down" | "new" {
+  const pts = recentSeries(n, all).filter((p) => p.checkin);
+  if (pts.length < 4) return "new";
+  const half = Math.floor(pts.length / 2);
+  const older = pts.slice(0, half);
+  const newer = pts.slice(half);
+  const avg = (a: DaySeriesPoint[]) => a.reduce((s, p) => s + (p.checkin!.mood as number), 0) / a.length;
+  const diff = avg(newer) - avg(older);
+  if (diff > 0.4) return "up";
+  if (diff < -0.4) return "down";
+  return "steady";
+}
+
 export type DayAdvice = {
   tone: "rest" | "gentle" | "go";
   title: string;

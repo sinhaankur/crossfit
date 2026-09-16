@@ -8,6 +8,7 @@ import { loadGoals, goalProgress, type Goal } from "@/lib/body";
 import { loadOneRMs, LIFT_LABEL, type OneRMs } from "@/lib/strength";
 import { lifeAdded } from "@/lib/game";
 import { MoodCheckin } from "@/components/mood-checkin";
+import { MoodHistory } from "@/components/mood-history";
 
 // /today — the dashboard home for someone who's using the app: one glance at
 // where you stand. This week's training, your streak, active goals, top PRs, and
@@ -49,6 +50,9 @@ export default function TodayPage() {
             stress and a kind, deterministic suggestion (rest · gentle · go).
             Sits at the top because how you feel shapes everything below. */}
         <MoodCheckin />
+        {/* A calm 14-day picture of how you've been (renders once you've logged
+            at least one day; refreshes live when you check in). */}
+        <MoodHistory />
 
         {empty ? (
           <div className="mt-8 rounded-3xl border border-dashed border-white/15 p-8 text-center">
