@@ -7,14 +7,16 @@ import * as THREE from "three";
 import type { Pattern } from "@/lib/movements";
 import { musclesFor, type MuscleId } from "@/lib/anatomy";
 
-// AnatomyHuman — the REAL anatomical body (from Z-Anatomy, CC-BY-SA 4.0): actual
-// muscle meshes, no skin. Each mesh carries a `kelo_muscle` tag (glTF extras) so
-// we can EMISSIVE-GLOW the muscles a movement works — primary bright, secondary
-// dim, the rest a quiet muscle-red. Drag to orbit. Draco-compressed, ~1MB.
+// AnatomyHuman — the REAL anatomical body (from Z-Anatomy, CC-BY-SA 4.0): a
+// bone-white SKELETON with the muscle system layered over it. The muscle layer is
+// semi-transparent so the skeleton reads through (the body has real structure, not
+// a shapeless mass), and each muscle mesh carries a `kelo_muscle` tag (glTF extras)
+// so we EMISSIVE-GLOW the muscles a movement works — those go solid + bright and
+// pop forward. Drag to orbit. Draco-compressed, ~0.6MB.
 //
 // © Ankur Sinha. Anatomy: Z-Anatomy — the libre 3D atlas — CC-BY-SA 4.0.
 
-const MODEL = "/anatomy-muscles.glb";
+const MODEL = "/anatomy-body.glb";
 
 // Muscle colors stay ANATOMICAL (flesh is red — that's the truth of the
 // tissue) and the worked signal stays hot: fire reads against the cool blue
@@ -29,8 +31,8 @@ export function AnatomyHuman({ pattern }: { pattern: Pattern }) {
   const { primary, secondary } = musclesFor(pattern);
   return (
     <div className="relative h-full w-full overflow-hidden rounded-2xl bg-gradient-to-b from-[#0d1526] to-[#070b14]">
-      {/* The model is ~1.53 m tall, feet at y=0, centered on x/z. We look at its
-          mid-height (~0.8 m) from far enough to see the whole body.
+      {/* The model is ~1.7 m tall, feet at y=0, centered on x/z. We look at its
+          mid-height (~0.85 m) from far enough to see the whole body.
           LIGHTING: cool navy studio — the old rig was red-on-red (warm ground
           bounce + red rim + red backdrop) and the body read as a muddy blob.
           Flesh stays warm; the ROOM is blue: bright neutral key, sky-blue rim
@@ -62,27 +64,45 @@ export function AnatomyHuman({ pattern }: { pattern: Pattern }) {
   );
 }
 
+const BONE = new THREE.Color("#e8e0d0");     // bone-white skeleton
+
 function Body({ primary, secondary }: { primary: MuscleId[]; secondary: MuscleId[] }) {
   const { scene } = useGLTF(MODEL);
   const cloned = useMemo(() => scene.clone(true), [scene]);
   const wrap = useRef<THREE.Group>(null);
 
-  // Track the worked-muscle materials so we can PULSE their glow (the "muscle
-  // firing" feel) without ever moving/dismembering the mesh — safe animation.
+  // Three material classes on the combined body:
+  //   · SKELETON (kelo_part=bone) — solid bone-white, rendered first so muscle
+  //     transparency reads over it.
+  //   · WORKED muscle (tagged + in this movement) — solid, coloured, glowing;
+  //     pops forward off the translucent body.
+  //   · everything else muscle — semi-transparent flesh so the skeleton shows
+  //     through and the body has depth instead of reading as a solid mass.
   const workedMats = useMemo(() => {
     const mats: { mat: THREE.MeshStandardMaterial; base: number }[] = [];
     cloned.traverse((o) => {
       const mesh = o as THREE.Mesh;
       if (!mesh.isMesh) return;
+      const part = (mesh.userData?.kelo_part ?? mesh.userData?.extras?.kelo_part) as string | undefined;
+      if (part === "bone") {
+        mesh.material = new THREE.MeshStandardMaterial({
+          color: BONE, roughness: 0.8, metalness: 0.02,
+        });
+        mesh.renderOrder = 0;
+        return;
+      }
       const tag = (mesh.userData?.kelo_muscle ?? mesh.userData?.extras?.kelo_muscle) as MuscleId | undefined;
       const worked = tag && primary.includes(tag) ? "p" : tag && secondary.includes(tag) ? "s" : "off";
       const base = worked === "p" ? 0.6 : worked === "s" ? 0.25 : 0;
+      const solid = worked !== "off"; // worked muscles go opaque + glow forward
       const mat = new THREE.MeshStandardMaterial({
         color: worked === "p" ? PRIMARY : worked === "s" ? SECONDARY : BASE,
         emissive: worked === "p" ? EMIS_P : worked === "s" ? EMIS_S : new THREE.Color("#000000"),
         emissiveIntensity: base, roughness: 0.55, metalness: 0.05,
+        transparent: !solid, opacity: solid ? 1 : 0.55, depthWrite: solid,
       });
       mesh.material = mat;
+      mesh.renderOrder = solid ? 2 : 1;
       if (base > 0) mats.push({ mat, base });
     });
     return mats;

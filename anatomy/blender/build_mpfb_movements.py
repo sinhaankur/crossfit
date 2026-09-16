@@ -452,14 +452,50 @@ def join_as(name, objs):
     bpy.context.view_layer.objects.active = objs[0]; bpy.ops.object.join()
     g = bpy.context.active_object; g.name = name; g.select_set(False); return g
 
-def barbell(name, gz, gy):
+# grip offsets (bone→object) for held gear, captured at the grip frame.
+GRIP_OFFSET = {}
+
+# plates: how many bumper plates per side, by movement (a visual "weight option"
+# so heavier lifts read heavier — deadlift is loaded, press lighter).
+def barbell(name, gz, gy, plates_per_side=3):
     parts = [cyl(f"{name}_shaft", 0.014, 1.9, (0, gy, gz), "X", STEEL, 24)]
     for sx in (1, -1):
         parts.append(cyl(f"{name}_grip.{sx}", 0.016, 0.16, (sx*0.20, gy, gz), "X", ACC, 16))
-        for pi, (pr, px) in enumerate([(0.225, 0.62), (0.225, 0.68), (0.20, 0.735)]):
+        # stack N bumper plates outboard of the grip; radius eases down the stack.
+        plate_specs = [(0.225, 0.62), (0.225, 0.68), (0.215, 0.735),
+                       (0.205, 0.79), (0.195, 0.845)]
+        for pi in range(min(plates_per_side, len(plate_specs))):
+            pr, px = plate_specs[pi]
             parts.append(cyl(f"{name}_pl.{sx}.{pi}", pr, 0.05, (sx*px, gy, gz), "X", PLATE, 28))
-        parts.append(cyl(f"{name}_col.{sx}", 0.05, 0.05, (sx*0.58, gy, gz), "X", ACC, 16))
+        # collar just outboard of the last plate
+        col_x = 0.58 + max(0, plates_per_side - 3) * 0.055
+        parts.append(cyl(f"{name}_col.{sx}", 0.05, 0.05, (sx*col_x, gy, gz), "X", ACC, 16))
     return join_as(name, parts)
+
+# Held gear registry: name → (aname, grip_frame, grip_z_offset). A barbell is held
+# in BOTH hands, so we track the MIDPOINT of the two wrists and keep the bar LEVEL
+# (it shouldn't roll with either wrist). The export loop bakes this per-frame.
+HELD_GEAR = {}
+
+def wrist_mid(fr):
+    """World midpoint of the two wrists at frame fr, plus the mean wrist height."""
+    scene.frame_set(fr)
+    bpy.context.view_layer.update()
+    ev = rig.evaluated_get(bpy.context.evaluated_depsgraph_get())
+    wl = (ev.matrix_world @ ev.pose.bones["wrist.L"].matrix).translation.copy()
+    wr = (ev.matrix_world @ ev.pose.bones["wrist.R"].matrix).translation.copy()
+    return (wl + wr) / 2.0
+
+def hold_in_hands(obj, aname):
+    """Mark a barbell as HELD LEVEL in both hands. The bar's grip line (its local X)
+    already runs left↔right through the wrists; we translate it so its centre sits at
+    the wrist midpoint each frame, keeping it horizontal. Baked in the export loop so
+    the bar rises/falls with the hands (the person picks it up / lifts it)."""
+    rig.animation_data.action = ACTIONS[aname]
+    # record the bar's world position now (built at the grip frame) as the baseline
+    # so its forward/side offset from the wrist midpoint is preserved.
+    HELD_GEAR[obj.name] = (aname, obj.matrix_world.translation.copy())
+    return obj
 
 def measure_hand(aname, fr):
     rig.animation_data.action = ACTIONS[aname]; scene.frame_set(fr)
@@ -493,12 +529,23 @@ def build_gear(mv):
         return [make_support_chair()]
     if mv.startswith("seated-"):
         return [make_chair()]
+    # HELD bars — built at the grip frame at the wrist MIDPOINT, then held level in
+    # both hands so the figure actually holds and lifts them through the rep.
     if mv == "squat":
-        h = measure_hand("squat", 36); return [barbell("bar", h.z+0.02, h.y-0.06)]
+        # back-squat: bar across the shoulders; grip at the top (frame 1 standing).
+        gf = 1; m = wrist_mid(gf)
+        bar = barbell("bar", m.z, m.y, plates_per_side=3)
+        return [hold_in_hands(bar, "squat")]
     if mv == "press":
-        h = measure_hand("press", 1); return [barbell("bar", h.z, h.y-0.04)]
+        gf = 1; m = wrist_mid(gf)
+        bar = barbell("bar", m.z, m.y, plates_per_side=2)  # lighter overhead
+        return [hold_in_hands(bar, "press")]
     if mv == "deadlift":
-        h = measure_hand("deadlift", 36); return [barbell("bar", max(0.22, h.z), h.y-0.02)]
+        # grip at the BOTTOM (frame 36 = floor), so the bar starts on the ground in
+        # the hands and rises as they stand — the pick-up reads correctly.
+        gf = 36; m = wrist_mid(gf)
+        bar = barbell("bar", m.z, m.y, plates_per_side=4)  # loaded
+        return [hold_in_hands(bar, "deadlift")]
     if mv == "pullup":
         bar = cyl("pu_bar", 0.02, 1.4, (0, 0.0, 2.06), "X", STEEL, 24)
         u1 = cube("pu_u1", 0.04, 0.04, 2.06, (0.66, 0.0, 1.03), STEEL)
@@ -525,7 +572,29 @@ for mv in ["squat", "deadlift", "press", "pullup", "plank", "walk", "run", "idle
     scene.frame_start, scene.frame_end = 1, frame_ends[mv]
     scene.frame_set(1)
     gear = build_gear(mv)
-    rig.animation_data.action = ACTIONS[mv]; scene.frame_set(1)
+    rig.animation_data.action = ACTIONS[mv]
+
+    # BAKE held gear's motion into its own keyframes. A barbell is held LEVEL in both
+    # hands: each frame we move the bar's centre to the wrist MIDPOINT (keeping the
+    # bar's built forward/side offset and its horizontal orientation), so it rises
+    # and falls with the hands — the person picks it up / lifts it — without rolling
+    # off one wrist. Plain object keyframes so the motion survives the glTF export.
+    held = [o for o in gear if o.name in HELD_GEAR]
+    for o in held:
+        aname, base_pos = HELD_GEAR[o.name]
+        base_mid = wrist_mid(scene.frame_start if aname != "deadlift" else 36)
+        # constant offset from the wrist midpoint (forward/side); vertical follows.
+        off = base_pos - base_mid
+        o.rotation_mode = "XYZ"
+        o.animation_data_create()
+        o.animation_data.action = bpy.data.actions.new(f"{o.name}_{mv}")
+        for fr in range(scene.frame_start, scene.frame_end + 1):
+            m = wrist_mid(fr)
+            o.location = m + off      # bar centre tracks the hands, stays level
+            o.rotation_euler = (0, 0, 0)
+            o.keyframe_insert("location", frame=fr)
+            o.keyframe_insert("rotation_euler", frame=fr)
+    scene.frame_set(1)
     for o in bpy.context.selected_objects: o.select_set(False)
     body.select_set(True); rig.select_set(True)
     for o in gear: o.select_set(True)
