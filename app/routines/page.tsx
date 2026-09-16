@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { SiteNav } from "@/components/site-nav";
+import { SiteFooter } from "@/components/site-footer";
 import { ROUTINES, stepMovement, type Routine } from "@/lib/routines";
 import { WorkoutTimer } from "@/components/workout-timer";
 
@@ -65,6 +66,7 @@ export default function RoutinesPage() {
 
         <p className="mt-8 text-center text-xs text-[var(--muted)]">Do the warm-up before every session. Never skip it — cold muscles get hurt.</p>
       </div>
+      <SiteFooter />
     </main>
   );
 }

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { SiteNav } from "@/components/site-nav";
+import { SiteFooter } from "@/components/site-footer";
 import {
   estimate1RM, workingWeight, loadOneRMs, saveOneRMs,
   LIFT_LABEL, type Lift, type OneRMs,
@@ -35,6 +36,7 @@ export default function BodyPage() {
         {tab === "bmi" && <BMI />}
         {tab === "goals" && <Goals />}
       </div>
+      <SiteFooter />
     </main>
   );
 }

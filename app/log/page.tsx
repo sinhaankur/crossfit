@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { SiteNav } from "@/components/site-nav";
+import { SiteFooter } from "@/components/site-footer";
 import {
   loadLog, saveLog, personalRecords, newId, exportLog,
   SCORING_LABEL, type WOD, type WODScoring,
@@ -135,6 +136,7 @@ export default function LogPage() {
 
         <p className="mt-8 text-center text-xs text-[var(--muted)]">Saved on this device only. Same WOD vocabulary as the Kelo app — export moves your log there.</p>
       </div>
+      <SiteFooter />
     </main>
   );
 }

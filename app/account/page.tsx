@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { SiteNav } from "@/components/site-nav";
+import { SiteFooter } from "@/components/site-footer";
 
 // /account — guest-first. Everything works with no account (data lives on your
 // device). Signing in with an email code is OPTIONAL — it's only for syncing your
@@ -103,6 +104,7 @@ export default function AccountPage() {
 
         <p className="mt-8 text-center text-xs text-[var(--muted)]">Private by design · on-device · free forever. Same data model as the Kelo app.</p>
       </div>
+      <SiteFooter />
     </main>
   );
 }

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { SiteNav } from "@/components/site-nav";
+import { SiteFooter } from "@/components/site-footer";
 import { trainedDates, currentStreak, daysThisMonth, monthGrid, type CalCell } from "@/lib/activity";
 
 // /calendar — the consistency view. A month heatmap of days trained + a streak
@@ -74,6 +75,7 @@ export default function CalendarPage() {
           Trained days come from your logged workouts. Even a couple of solid days a week keeps you healthy — that&rsquo;s the whole game.
         </p>
       </div>
+      <SiteFooter />
     </main>
   );
 }

@@ -3,6 +3,7 @@
 import { BENCHMARKS } from "@/lib/benchmarks";
 import { SCORING_LABEL } from "@/lib/wod-log";
 import { SiteNav } from "@/components/site-nav";
+import { SiteFooter } from "@/components/site-footer";
 import { WorkoutTimer } from "@/components/workout-timer";
 
 // Benchmark WODs — the famous named workouts (The Girls + Hero WODs), each with
@@ -33,6 +34,7 @@ export default function BenchmarksPage() {
           Scale freely. Never attempt a full Hero WOD (like Murph) cold — build to it over weeks.
         </p>
       </div>
+      <SiteFooter />
     </main>
   );
 }

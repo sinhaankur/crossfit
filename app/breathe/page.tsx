@@ -1,6 +1,7 @@
 "use client";
 
 import { SiteNav } from "@/components/site-nav";
+import { SiteFooter } from "@/components/site-footer";
 import { Breathe } from "@/components/breathe";
 
 // /breathe — a calm down-regulation space. The mental side of "health AND
@@ -19,6 +20,7 @@ export default function BreathePage() {
           <Breathe />
         </div>
       </div>
+      <SiteFooter />
     </main>
   );
 }

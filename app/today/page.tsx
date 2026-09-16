@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { SiteNav } from "@/components/site-nav";
+import { SiteFooter } from "@/components/site-footer";
 import { trainedDates, currentStreak, daysThisWeek, daysThisMonth, planSessionsDone } from "@/lib/activity";
 import { loadLog, personalRecords, SCORING_LABEL } from "@/lib/wod-log";
 import { loadGoals, goalProgress, type Goal } from "@/lib/body";
@@ -139,6 +140,7 @@ export default function TodayPage() {
           </div>
         </Section>
       </div>
+      <SiteFooter />
     </main>
   );
 }

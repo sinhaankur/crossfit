@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { SiteNav } from "@/components/site-nav";
+import { SiteFooter } from "@/components/site-footer";
 import { FEATURES, STATUS_META, type Feature } from "@/lib/features";
 import { Check, Hammer, Clock, Send } from "lucide-react";
 
@@ -63,6 +64,7 @@ export default function FeaturesPage() {
 
         <p className="mt-8 text-center text-xs text-[var(--muted)]">Built by <a href="https://sinhaankur.com" className="underline">Ankur Sinha</a> · consistency over extremes.</p>
       </div>
+      <SiteFooter />
     </main>
   );
 }
