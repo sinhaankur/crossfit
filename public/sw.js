@@ -2,7 +2,7 @@
 // app shell, network-first for navigations (so new deploys show up), falling back
 // to the cached shell when offline. Everything the app needs is on-device anyway.
 
-const CACHE = "kelo-v1";
+const CACHE = "kelo-v2";
 const SHELL = ["/", "/body", "/log", "/movements", "/benchmarks", "/app", "/manifest.webmanifest", "/icon-192.png", "/icon-512.png"];
 
 self.addEventListener("install", (e) => {
